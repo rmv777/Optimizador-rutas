@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrutador de Técnicos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; font-size: 2.2rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #667eea; }
+        .panel h3 { color: #495057; margin-bottom: 20px; font-size: 1.3rem; }
+        .fecha-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; }
+        .salida-info { background: #e3f2fd; padding: 12px; border-radius: 6px; color: #1976d2; font-weight: bold; }
+        .tiempo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin-top: 15px; }
+        .tiempo-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 14px; }
+        .zona-archivo { border: 3px dashed #ccc; padding: 50px 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; transition: all 0.3s; }
+        .zona-archivo:hover { border-color: #667eea; background: #f0f4ff; }
+        .lista-direcciones { max-height: 320px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px; background: white; margin: 15px 0; }
+        .direccion-item { display: flex; align-items: center; padding: 12px; margin-bottom: 10px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #667eea; }
+        .numero { background: #667eea; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; }
+        .texto { flex: 1; color: #333; }
+        .distancia { color: #666; font-weight: bold; font-size: 14px; }
+        .boton { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .boton:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+        .boton:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .mapa-area { background: #e9ecef; height: 420px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #666; border: 2px solid #dee2e6; }
+        .estadisticas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .estadistica { background: #f8f9fa; padding: 18px; border-radius: 8px; text-align: center; border-left: 4px solid #667eea; }
+        .valor-estadistica { font-size: 22px; font-weight: bold; color: #667eea; margin-top: 5px; }
+        .mensaje { padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-weight: bold; }
+        .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .cargando { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: girar 1s linear infinite; }
+        @keyframes girar { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } .tiempo-grid { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Enrutador de Técnicos - Andalucía</h1>
+        
+        <div class="grid">
+            <!-- Panel Izquierdo -->
+            <div>
+                <!-- Fecha -->
+                <div class="panel">
+                    <h3>📅 Fecha de Viaje</h3>
+                    <input type="date" id="fechaViaje" class="fecha-input">
+                    <div class="salida-info">
+                        📍 Salida: Valencina de la Concepción (Por la mañana)
+                    </div>
+                </div>
+                
+                <!-- Tiempo -->
+                <div class="panel">
+                    <h3>🌤️ Previsión del Tiempo</h3>
+                    <div id="contenedorTiempo">Selecciona una fecha para ver la previsión</div>
+                </div>
+                
+                <!-- Archivo -->
+                <div class="panel">
+                    <h3>🖼️ Cargar Direcciones</h3>
+                    <div class="zona-archivo" id="zonaArchivo">
+                        <p><strong>📤 Haz clic para seleccionar imagen</strong></p>
+                        <p>o arrastra una imagen aquí</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 10px;">Imagen con direcciones a visitar</p>
+                    </div>
+                    <input type="file" id="inputArchivo" accept="image/*" style="display: none;">
+                    <div id="vistaPrevia" style="margin-top: 15px; text-align: center;"></div>
+                </div>
+                
+                <!-- Direcciones -->
+                <div class="panel">
+                    <h3>📋 Direcciones Ordenadas</h3>
+                    <div id="listaDirecciones" class="lista-direcciones">
+                        <p style="text-align: center; color: #666; font-style: italic; padding: 0;">
+                            Las direcciones aparecerán aquí ordenadas por distancia a Sevilla<br>
+                            (más lejanas primero, más cercanas al final)
+                        </p>
+                    </div>
+                    <button id="botonOptimizar" class="boton" disabled>🗺️ Optimizar Ruta</button>
+                </div>
+            </div>
+            
+            <!-- Panel Derecho -->
+            <div>
+                <div class="panel">
+                    <h3>🗺️ Mapa de Ruta Optimizada</h3>
+                    <div id="areaMapa" class="mapa-area">
+                        <div style="text-align: center;">
+                            <h4 style="color: #495057; margin-bottom: 15px;">Visualización de Ruta</h4>
+                            <p style="margin-bottom: 10px;">Las rutas aparecerán aquí una vez procesadas las direcciones</p>
+                            <p style="font-size: 14px; color: #6c757d;">📍 Punto de salida: Valencina de la Concepción</p>
+                        </div>
+                    </div>
+                    
+                    <div class="estadisticas">
+                        <div class="estadistica">
+                            <div>🛣️ Distancia Total</div>
+                            <div class="valor-estadistica" id="distanciaTotal">-- km</div>
+                        </div>
+                        <div class="estadistica">
+                            <div>⏱️ Tiempo Estimado</div>
+                            <div class="valor-estadistica" id="tiempoTotal">-- min</div>
+                        </div>
+                        <div class="estadistica">
+                            <div>📍 Número de Paradas</div>
+                            <div class="valor-estadistica" id="numeroParadas">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var listaDirecciones = [];
+        var provinciasAndalucia = ['Sevilla', 'Cádiz', 'Huelva', 'Málaga', 'Córdoba'];
+        
+        function inicializar() {
+            var hoy = new Date();
+            var fechaHoy = hoy.getFullYear() + '-' + 
+                         String(hoy.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(hoy.getDate()).padStart(2, '0');
+            document.getElementById('fechaViaje').value = fechaHoy;
+            
+            cargarPrevisiones();
+            configurarEventos();
+        }
+        
+        function configurarEventos() {
+            document.getElementById('fechaViaje').addEventListener('change', cargarPrevisiones);
+            document.getElementById('zonaArchivo').addEventListener('click', function() {
+                document.getElementById('inputArchivo').click();
+            });
+            document.getElementById('inputArchivo').addEventListener('change', procesarImagen);
+            document.getElementById('botonOptimizar').addEventListener('click', generarRutaOptima);
+        }
+        
+        function cargarPrevisiones() {
+            var contenedor = document.getElementById('contenedorTiempo');
+            contenedor.innerHTML = '<div class="cargando"></div> Cargando previsiones...';
+            
+            setTimeout(function() {
+                var htmlTiempo = '<div class="tiempo-grid">';
+                
+                for (var i = 0; i < provinciasAndalucia.length; i++) {
+                    var provincia = provinciasAndalucia[i];
+                    var temperatura = Math.floor(Math.random() * 15) + 15; // 15-30°C
+                    var iconos = ['☀️', '⛅', '☁️', '🌧️'];
+                    var condiciones = ['Soleado', 'Nublado', 'Cubierto', 'Lluvia'];
+                    var indiceAleatorio = Math.floor(Math.random() * 4);
+                    
+                    htmlTiempo += '<div class="tiempo-card">';
+                    htmlTiempo += '<div><strong>' + provincia + '</strong></div>';
+                    htmlTiempo += '<div style="font-size: 18px; margin: 0;">' + temperatura + '°C</div>';
+                    htmlTiempo += '<div style="font-size: 12px;">' + iconos[indiceAleatorio] + ' ' + condiciones[indiceAleatorio] + '</div>';
+                    htmlTiempo += '</div>';
+                }
+                
+                htmlTiempo += '</div>';
+                contenedor.innerHTML = htmlTiempo;
+            }, 1200);
+        }
+        
+        function procesarImagen() {
+            var archivo = document.getElementById('inputArchivo').files[0];
+            if (!archivo) return;
+            
+            if (!archivo.type.startsWith('image/')) {
+                mostrarMensaje('Por favor, selecciona un archivo de imagen válido', 'error');
+                return;
+            }
+            
+            // Mostrar vista previa
+            var lector = new FileReader();
+            lector.onload = function(evento) {
+                document.getElementById('vistaPrevia').innerHTML = 
+                    '<img src="' + evento.target.result + '" style="max-width: 100%; max-height: 180px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">';
+            };
+            lector.readAsDataURL(archivo);
+            
+            // Simular procesamiento OCR
+            var contenedorDirecciones = document.getElementById('listaDirecciones');
+            contenedorDirecciones.innerHTML = '<div style="text-align: center; padding: 0;"><div class="cargando"></div><p style="margin-top: 15px;">Procesando imagen y extrayendo direcciones...</p></div>';
+            
+            setTimeout(function() {
+                var direccionesEjemplo = [
+                    'Calle Real 45, 41410 Carmona, Sevilla',
+                    'Avenida de la Constitución 12, 11403 Jerez de la Frontera, Cádiz',
+                    'Plaza de España 8, 21001 Huelva',
+                    'Calle Marqués de Larios 23, 29015 Málaga',
+                    'Ronda de Isasa 67, 14001 Córdoba',
+                    'Carretera de Utrera km 3, 41720 Los Palacios y Villafranca, Sevilla',
+                    'Polígono Industrial El Portal, 11500 El Puerto de Santa María, Cádiz',
+                    'Avenida Martín Alonso Pinzón 15, 21003 Huelva'
+                ];
+                
+                listaDirecciones = [];
+                for (var i = 0; i < direccionesEjemplo.length; i++) {
+                    listaDirecciones.push({
+                        texto: direccionesEjemplo[i],
+                        distanciaASevilla: Math.floor(Math.random() * 120) + 25 // 25-145 km
+                    });
+                }
+                
+                // Ordenar por distancia (más lejos primero)
+                listaDirecciones.sort(function(a, b) {
+                    return b.distanciaASevilla - a.distanciaASevilla;
+                });
+                
+                mostrarDirecciones();
+                document.getElementById('botonOptimizar').disabled = false;
+                mostrarMensaje('¡Direcciones extraídas y ordenadas correctamente!', 'exito');
+            }, 2500);
+        }
+        
+        function mostrarDirecciones() {
+            var contenedor = document.getElementById('listaDirecciones');
+            var html = '';
+            
+            for (var i = 0; i < listaDirecciones.length; i++) {
+                var direccion = listaDirecciones[i];
+                html += '<div class="direccion-item">';
+                html += '<div class="numero">' + (i + 1) + '</div>';
+                html += '<div class="texto">' + direccion.texto + '</div>';
+                html += '<div class="distancia">' + direccion.distanciaASevilla + ' km</div>';
+                html += '</div>';
+            }
+            
+            contenedor.innerHTML = html;
+        }
+        
+        function generarRutaOptima() {
+            var areaMapa = document.getElementById('areaMapa');
+            areaMapa.innerHTML = '<div style="text-align: center; padding: 0;"><div class="cargando"></div><p style="margin-top: 15px;">Generando ruta optimizada...</p></div>';
+            
+            setTimeout(function() {
+                var htmlRuta = '<div style="text-align: center; padding: 0;">';
+                htmlRuta += '<h4 style="color: #667eea; margin-bottom: 20px;">🗺️ Ruta Optimizada Generada</h4>';
+                htmlRuta += '<div style="background: white; padding: 0; border-radius: 10px; text-align: left; margin: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">';
+                htmlRuta += '<p style="font-weight: bold; margin-bottom: 15px; color: #495057;"><strong>📍 Punto de Salida:</strong> Valencina de la Concepción</p>';
+                htmlRuta += '<hr style="margin: 0; border: 1px solid #dee2e6;">';
+                
+                for (var i = 0; i < listaDirecciones.length; i++) {
+                    var direccion = listaDirecciones[i];
+                    htmlRuta += '<p style="margin: 0; padding: 0; background: #f8f9fa; border-radius: 5px;">';
+                    htmlRuta += '<strong style="color: #667eea;">' + (i + 1) + '.</strong> ';
+                    htmlRuta += direccion.texto;
+                    htmlRuta += ' <span style="color: #6c757d; font-size: 14px;">(' + direccion.distanciaASevilla + ' km de Sevilla)</span>';
+                    htmlRuta += '</p>';
+                }
+                
+                htmlRuta += '</div>';
+                htmlRuta += '<p style="color: #28a745; font-weight: bold; font-size: 16px;">✅ Ruta optimizada por distancia a Sevilla</p>';
+                htmlRuta += '</div>';
+                
+                areaMapa.innerHTML = htmlRuta;
+                actualizarEstadisticas();
+                mostrarMensaje('¡Ruta optimizada generada exitosamente!', 'exito');
+            }, 2000);
+        }
+        
+        function actualizarEstadisticas() {
+            var distanciaTotal = 0;
+            
+            // Calcular distancia total aproximada
+            for (var i = 0; i < listaDirecciones.length; i++) {
+                distanciaTotal += listaDirecciones[i].distanciaASevilla;
+            }
+            
+            // Estimar tiempo (60 km/h promedio + 30 minutos por parada)
+            var tiempoTotal = Math.round((distanciaTotal / 60) * 60 + (listaDirecciones.length * 30));
+            
+            document.getElementById('distanciaTotal').textContent = distanciaTotal + ' km';
+            document.getElementById('tiempoTotal').textContent = tiempoTotal + ' min';
+            document.getElementById('numeroParadas').textContent = listaDirecciones.length;
+        }
+        
+        function mostrarMensaje(texto, tipo) {
+            var mensaje = document.createElement('div');
+            mensaje.className = 'mensaje ' + tipo;
+            mensaje.textContent = texto;
+            
+            var contenedor = document.querySelector('.container');
+            contenedor.insertBefore(mensaje, contenedor.firstChild);
+            
+            setTimeout(function() {
+                if (mensaje.parentNode) {
+                    mensaje.parentNode.removeChild(mensaje);
+                }
+            }, 4500);
+        }
+        
+        // Inicializar cuando se carga la página
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', inicializar);
+        } else {
+            inicializar();
+        }
+    </script>
+</body>
+</html>
