@@ -1,3 +1,15 @@
+const express = require("express");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors({
+    origin: "https://rmv777.github.io"
+}));
+
+app.use(express.json());
+
+
 import express from "express";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
