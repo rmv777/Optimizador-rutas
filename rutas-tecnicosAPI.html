@@ -150,6 +150,8 @@
                             <p style="margin-bottom: 10px;">Las rutas aparecerán aquí una vez procesadas las direcciones</p>
                             <p style="font-size: 14px; color: #6c757d;">📍 Punto de salida: Valencina de la Concepción</p>
                         </div>
+                        <div id="map" style="width:100%; height:500px;"></div>
+
                     </div>
                     
                     <div class="estadisticas">
@@ -187,7 +189,10 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
-    
+
+    async function procesarImagenOCR(event) { ... }
+    function procesarDireccionesReales(lineas) { ... }
+
     <script>
         var listaDirecciones = [];
         var provinciasAndalucia = ['Sevilla', 'Cádiz', 'Huelva', 'Málaga', 'Córdoba'];
