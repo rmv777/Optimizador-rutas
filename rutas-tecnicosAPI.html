@@ -136,6 +136,8 @@
                             (más lejanas primero, más cercanas al final)
                         </p>
                     </div>
+                    <div id="map" style="width:100%; height:450px; margin-top:20px;"></div>
+
                     <button id="botonOptimizar" class="boton" disabled>🗺️ Optimizar Ruta</button>
                 </div>
             </div>
@@ -852,5 +854,54 @@
             inicializar();
         }
     </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=places"></script>
+<script>
+let map;
+let directionsService;
+let directionsRenderer;
+
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 37.3891, lng: -5.9845 }, // Sevilla
+        zoom: 7
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer();
+    directionsRenderer.setMap(map);
+}
+
+window.onload = initMap;
+
+function optimizarRuta() {
+    const pasos = document.querySelectorAll(".direccion-item");
+    if (pasos.length < 2) {
+        alert("Necesitas al menos 2 direcciones");
+        return;
+    }
+
+    const direcciones = Array.from(pasos).map(li => li.textContent.trim());
+
+    const origen = direcciones[0];
+    const destino = direcciones[direcciones.length - 1];
+    const paradas = direcciones.slice(1, -1).map(d => ({ location: d }));
+
+    const request = {
+        origin: origen,
+        destination: destino,
+        waypoints: paradas,
+        travelMode: "DRIVING"
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === "OK") {
+            directionsRenderer.setDirections(result);
+        } else {
+            alert("Error calculando ruta: " + status);
+        }
+    });
+}
+</script>
+
 </body>
 </html>
