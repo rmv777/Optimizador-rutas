@@ -86,14 +86,13 @@ button:hover {
 </div>
 
 <!-- GOOGLE MAPS -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY&libraries=places"></script>
 
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
 const ORIGEN_FIJO = "Valencina de la Concepción, Sevilla, España";
-
 let map;
 let bounds;
 let markers = [];
@@ -106,34 +105,14 @@ function mostrarMensaje(texto, tipo) {
 
 function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 37.417, lng: -6.072 }, // aprox. Valencina
+        center: { lat: 37.417, lng: -6.072 },
         zoom: 10
     });
 
     bounds = new google.maps.LatLngBounds();
-
-    // Marcador del origen fijo
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
-        if (status === "OK" && results[0]) {
-            const pos = results[0].geometry.location;
-            new google.maps.Marker({
-                map,
-                position: pos,
-                label: "V",
-                title: ORIGEN_FIJO
-            });
-            bounds.extend(pos);
-            map.fitBounds(bounds);
-        }
-    });
-
-    mostrarMensaje("Mapa cargado. Sube una imagen para obtener direcciones por OCR.", "info");
 }
 
 window.onload = initMap;
-
-// OCR
 
 async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
@@ -167,10 +146,7 @@ async function procesarImagenOCR(event) {
         mostrarMensaje("Error procesando la imagen", "advertencia");
     }
 }
-</script>
 
-
-// Distancias a Valencina usando Distance Matrix
 function calcularDistanciasYOrdenar(direcciones) {
     const service = new google.maps.DistanceMatrixService();
 
@@ -183,50 +159,6 @@ function calcularDistanciasYOrdenar(direcciones) {
         },
         (response, status) => {
             if (status !== "OK") {
-                console.error("Error DistanceMatrix:", status, response);
-                mostrarMensaje("Error calculando distancias: " + status, "advertencia");
-                return;
-            }
-
-            const results = response.rows[0].elements;
-            const datos = [];
-
-            for (let i = 0; i < results.length; i++) {
-                const el = results[i];
-                if (el.status === "OK") {
-                    datos.push({
-                        direccion: direcciones[i],
-                        distanciaTexto: el.distance.text,
-                        distanciaValor: el.distance.value, // en metros
-                        duracionTexto: el.duration.text
-                    });
-                }
-            }
-
-            if (datos.length === 0) {
-                mostrarMensaje("No se pudieron calcular distancias válidas.", "advertencia");
-                return;
-            }
-
-            // Ordenar de más lejos a más cerca
-            datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
-
-            mostrarMensaje("Direcciones ordenadas por distancia a Valencina (de más lejos a más cerca).", "exito");
-
-            <script>
-function calcularDistanciasYOrdenar(direcciones) {
-    const service = new google.maps.DistanceMatrixService();
-
-    service.getDistanceMatrix(
-        {
-            origins: [ORIGEN_FIJO],
-            destinations: direcciones,
-            travelMode: google.maps.TravelMode.DRIVING,
-            unitSystem: google.maps.UnitSystem.METRIC
-        },
-        (response, status) => {
-            if (status !== "OK") {
-                console.error("Error DistanceMatrix:", status, response);
                 mostrarMensaje("Error calculando distancias: " + status, "advertencia");
                 return;
             }
@@ -246,22 +178,8 @@ function calcularDistanciasYOrdenar(direcciones) {
                 }
             }
 
-            if (datos.length === 0) {
-                mostrarMensaje("No se pudieron calcular distancias válidas.", "advertencia");
-                return;
-            }
-
-            // Ordenar de más lejos a más cerca
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
 
-            mostrarMensaje("Direcciones ordenadas por distancia a Valencina.", "exito");
-
-            pintarListaYMapa(datos);
-        }
-    );
-}
-</script>
-    
             pintarListaYMapa(datos);
         }
     );
@@ -273,28 +191,38 @@ function limpiarMarcadores() {
     bounds = new google.maps.LatLngBounds();
 }
 
-datos.forEach((item, idx) => {
-    const li = document.createElement("li");
-    li.innerHTML = `
-        <strong>${idx + 1}. ${item.direccion}</strong><br>
-        <span class="dist">Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})</span>
-    `;
-    lista.appendChild(li);
+function pintarListaYMapa(datos) {
+    const lista = document.getElementById("lista-direcciones");
+    lista.innerHTML = "";
+    limpiarMarcadores();
 
-    // Geocodificar cada dirección para poner marcador
-    geocoder.geocode({ address: item.direccion }, (results, status) => {
-        if (status === "OK" && results[0]) {
-            const pos = results[0].geometry.location;
-            const marker = new google.maps.Marker({
-                map,
-                position: pos,
-                label: String(idx + 1),
-                title: item.direccion
-            });
-            markers.push(marker);
-            bounds.extend(pos);
-            map.fitBounds(bounds);
-        }
+    const geocoder = new google.maps.Geocoder();
+
+    datos.forEach((item, idx) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <strong>${idx + 1}. ${item.direccion}</strong><br>
+            <span class="dist">Distancia: ${item.distanciaTexto} (${item.duracionTexto})</span>
+        `;
+        lista.appendChild(li);
+
+        geocoder.geocode({ address: item.direccion }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const pos = results[0].geometry.location;
+                const marker = new google.maps.Marker({
+                    map,
+                    position: pos,
+                    label: String(idx + 1),
+                    title: item.direccion
+                });
+                markers.push(marker);
+                bounds.extend(pos);
+                map.fitBounds(bounds);
+            }
+        });
     });
-});
+}
+</script>
 
+</body>
+</html>
