@@ -156,6 +156,8 @@
 
     <!-- Tesseract.js para OCR -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
     
     <script>
         var listaDirecciones = [];
@@ -320,9 +322,13 @@
             document.getElementById('contadorDirecciones').style.display = 'none';
             document.getElementById('btnLimpiarTodas').style.display = 'none';
             document.getElementById('textoExtraido').style.display = 'none';
-            
-            // Procesar con Tesseract.js
-            Tesseract.recognize(
+                
+                // Inicializar Google Maps Distance Matrix Service
+                if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+                    window.distanceMatrixService = new google.maps.DistanceMatrixService();
+                } else {
+                    console.warn('Google Maps API no está cargada. Verifica tu API Key.');
+                }
                 archivo,
                 'spa', // Idioma español
                 {
@@ -549,21 +555,48 @@
             return R * c;
         }
             */
-           async function obtenerDistanciaReal(origen, destino) {
-    try {
-        const respuesta = await fetch("https://optimizador-rutas-29sa.onrender.com/distancia", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ origen, destino })
-        });
+        async function obtenerDistanciaReal(origen, destino) {
+            return new Promise((resolve, reject) => {
+                // Verificar que Google Maps esté disponible
+                if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
+                    console.error('Google Maps API no está cargada');
+                    reject(new Error('Google Maps API no cargada'));
+                    return;
+                }
 
-        const datos = await respuesta.json();
-        return datos.distancia; // metros
-    } catch (error) {
-        console.error("Error al obtener distancia real:", error);
-        return null;
-    }
-}
+                const service = new google.maps.DistanceMatrixService();
+                
+                service.getDistanceMatrix(
+                    {
+                        origins: [{ lat: origen.lat, lng: origen.lng }],
+                        destinations: [{ lat: destino.lat, lng: destino.lng }],
+                        travelMode: google.maps.TravelMode.DRIVING,
+                        unitSystem: google.maps.UnitSystem.METRIC
+                    },
+                    function(response, status) {
+                        if (status === google.maps.DistanceMatrixStatus.OK) {
+                            const element = response.rows[0].elements[0];
+                            
+                            if (element.status === 'OK') {
+                                const distanciaMetros = element.distance.value;
+                                const tiempoSegundos = element.duration.value;
+                                
+                                console.log('Distancia Google Maps (metros):', distanciaMetros);
+                                console.log('Tiempo estimado (segundos):', tiempoSegundos);
+                                
+                                resolve(distanciaMetros);
+                            } else {
+                                console.error('Error en elemento de respuesta:', element.status);
+                                reject(new Error('No se pudo calcular la distancia: ' + element.status));
+                            }
+                        } else {
+                            console.error('Error en Distance Matrix Service:', status);
+                            reject(new Error('Error en Distance Matrix Service: ' + status));
+                        }
+                    }
+                );
+            });
+        }
 
         
         function calcularDistanciaEstimadaPorProvincia(texto) {
