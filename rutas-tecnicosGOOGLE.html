@@ -36,10 +36,22 @@
 
 
     <button onclick="procesarEntrada()">Procesar direcciones</button>
-
     <button id="botonOptimizar" onclick="generarRutaOptima()" disabled>Optimizar ruta</button>
     <button onclick="limpiarTodasDirecciones()">Limpiar todas</button>
+    
+    <!-- NUEVO: recálculo tras editar -->
+    <button onclick="recalcularDistanciasEditadas()">Recalcular distancias</button>
+    
+    <br><br>
+    
+    <!-- NUEVO: tiempo de parada -->
+    <label>Minutos de parada en cada dirección: 
+        <input type="number" id="minutosParada" value="60" min="0" style="width:60px;">
+    </label>
+    <button onclick="recalcularTiempos()">Recalcular tiempos</button>
 
+
+    
     <h3>Direcciones procesadas (<span id="numeroDirecciones">0</span>)</h3>
     <div id="listaDirecciones"></div>
 
@@ -93,6 +105,8 @@ async function obtenerDistanciaReal(origen, destino) {
    PROCESAMIENTO DE DIRECCIONES
 ============================================================ */
 let listaDirecciones = [];
+let distanciaUltimaAValencina = null;
+
 
 async function calcularDistanciaRealGPS(texto) {
     const textoLimpio = texto.toLowerCase().replace(/[^\w\s]/g, ' ').trim();
@@ -103,43 +117,104 @@ async function calcularDistanciaRealGPS(texto) {
         "dos hermanas": { lat: 37.2829, lng: -5.9209 },
         "alcala de guadaira": { lat: 37.3374, lng: -5.8399 },
         "mairena del aljarafe": { lat: 37.3446, lng: -6.0639 }
-        // Añade aquí todas tus ciudades
+        // ...
     };
 
     let ciudadEncontrada = Object.keys(coordenadasCiudades).find(c =>
         textoLimpio.includes(c)
     );
 
-    if (ciudadEncontrada) {
-        const origen = coordenadasCiudades["valencina"];
-        const destino = coordenadasCiudades[ciudadEncontrada];
-
-        const metros = await obtenerDistanciaReal(origen, destino);
-        return Math.round(metros / 1000);
+    if (!ciudadEncontrada) {
+        return {
+            texto,
+            ciudad: null,
+            coords: null,
+            distanciaDesdeValencina: 100, // fallback
+        };
     }
 
-    return 100; // fallback
+    const origen = coordenadasCiudades["valencina"];
+    const destino = coordenadasCiudades[ciudadEncontrada];
+
+    const metros = await obtenerDistanciaReal(origen, destino);
+    const km = Math.round(metros / 1000);
+
+    return {
+        texto,
+        ciudad: ciudadEncontrada,
+        coords: destino,
+        distanciaDesdeValencina: km
+    };
 }
+
 
 async function procesarDireccionesReales(lista) {
     listaDirecciones = [];
 
+    // 1) Distancia desde Valencina a cada dirección
+    const resultados = [];
     for (let i = 0; i < lista.length; i++) {
-        const distancia = await calcularDistanciaRealGPS(lista[i]);
+        const info = await calcularDistanciaRealGPS(lista[i]);
+        resultados.push(info);
+    }
+
+    // 2) Ordenar de más lejos a más cerca
+    resultados.sort((a, b) => b.distanciaDesdeValencina - a.distanciaDesdeValencina);
+
+    // 3) Calcular distancias entre direcciones consecutivas
+    const coordenadasCiudades = {
+        "valencina": { lat: 37.4167, lng: -6.0833 },
+        "sevilla": { lat: 37.3891, lng: -5.9845 },
+        "dos hermanas": { lat: 37.2829, lng: -5.9209 },
+        "alcala de guadaira": { lat: 37.3374, lng: -5.8399 },
+        "mairena del aljarafe": { lat: 37.3446, lng: -6.0639 }
+        // mismo mapa que antes
+    };
+
+    const velocidadKmH = 60; // puedes cambiarlo
+    const minutosPorKm = 60 / velocidadKmH;
+
+    for (let i = 0; i < resultados.length; i++) {
+        let distanciaDesdeAnterior = 0;
+
+        if (i > 0 && resultados[i - 1].coords && resultados[i].coords) {
+            const metros = await obtenerDistanciaReal(
+                resultados[i - 1].coords,
+                resultados[i].coords
+            );
+            distanciaDesdeAnterior = Math.round(metros / 1000);
+        }
+
+        const distanciaDesdeValencina = resultados[i].distanciaDesdeValencina;
 
         listaDirecciones.push({
             id: Date.now() + i,
-            texto: lista[i],
-            distanciaASevilla: distancia
+            texto: resultados[i].texto,
+            ciudad: resultados[i].ciudad,
+            coords: resultados[i].coords,
+            distanciaDesdeValencina,
+            distanciaDesdeAnterior,
+            tiempoDesdeValencina: Math.round(distanciaDesdeValencina * minutosPorKm),
+            tiempoDesdeAnterior: Math.round(distanciaDesdeAnterior * minutosPorKm)
         });
     }
 
-    listaDirecciones.sort((a, b) => b.distanciaASevilla - a.distanciaASevilla);
+    // 4) Distancia última dirección → Valencina
+    distanciaUltimaAValencina = null;
+    if (listaDirecciones.length > 0 && listaDirecciones.at(-1).coords) {
+        const metros = await obtenerDistanciaReal(
+            listaDirecciones.at(-1).coords,
+            coordenadasCiudades["valencina"]
+        );
+        distanciaUltimaAValencina = Math.round(metros / 1000);
+    }
 
     mostrarDirecciones();
     actualizarContadores();
-    document.getElementById("botonOptimizar").disabled = false;
+    actualizarEstadisticas();
+    document.getElementById("botonOptimizar").disabled = listaDirecciones.length === 0;
 }
+
 
 function procesarEntrada() {
     const texto = document.getElementById("entradaDirecciones").value.trim();
@@ -187,6 +262,21 @@ function procesarEntrada() {
     }
 }
 
+    // Recalcular Distancias Editadas
+async function recalcularDistanciasEditadas() {
+    const inputs = document.querySelectorAll(".direccion-editable");
+    const nuevas = Array.from(inputs).map(i => i.value.trim()).filter(t => t.length > 0);
+
+    if (nuevas.length === 0) {
+        mostrarMensaje("No hay direcciones para recalcular", "advertencia");
+        return;
+    }
+
+    mostrarMensaje("Recalculando distancias...", "info");
+    await procesarDireccionesReales(nuevas);
+    mostrarMensaje("Distancias recalculadas", "exito");
+}
+    
 /* ============================================================
    GOOGLE MAPS — RUTA
 ============================================================ */
@@ -225,14 +315,23 @@ function mostrarDirecciones() {
 
     listaDirecciones.forEach((d, i) => {
         cont.innerHTML += `
-            <div class="direccion-item">
+            <div class="direccion-item" data-id="${d.id}">
                 <div class="numero">${i + 1}</div>
-                <div>${d.texto}</div>
-                <div class="distancia">${d.distanciaASevilla} km</div>
+                <div style="flex:1;">
+                    <input type="text" class="direccion-editable" data-index="${i}"
+                           value="${d.texto}" style="width:100%;">
+                    <div style="font-size:12px; color:#555;">
+                        Desde Valencina: <strong>${d.distanciaDesdeValencina} km</strong> 
+                        (${d.tiempoDesdeValencina} min)<br>
+                        Desde anterior: <strong>${d.distanciaDesdeAnterior} km</strong> 
+                        (${d.tiempoDesdeAnterior} min)
+                    </div>
+                </div>
             </div>
         `;
     });
 }
+
 
 function actualizarContadores() {
     document.getElementById("numeroDirecciones").textContent = listaDirecciones.length;
@@ -255,6 +354,35 @@ function mostrarMensaje(texto, tipo) {
 
     setTimeout(() => msg.remove(), 3000);
 }
+
+function actualizarEstadisticas() {
+    let distanciaTotal = 0;
+    let tiempoDesplazamiento = 0;
+
+    listaDirecciones.forEach(d => {
+        distanciaTotal += d.distanciaDesdeAnterior || d.distanciaDesdeValencina;
+        tiempoDesplazamiento += d.tiempoDesdeAnterior || d.tiempoDesdeValencina;
+    });
+
+    if (distanciaUltimaAValencina != null) {
+        distanciaTotal += distanciaUltimaAValencina;
+        tiempoDesplazamiento += distanciaUltimaAValencina; // 1 km = 1 min con 60 km/h
+    }
+
+    const minutosParada = parseInt(document.getElementById("minutosParada").value || "60", 10);
+    const tiempoParadas = listaDirecciones.length * minutosParada;
+    const tiempoTotal = tiempoDesplazamiento + tiempoParadas;
+
+    document.getElementById("distanciaTotal").textContent = distanciaTotal + " km";
+    document.getElementById("tiempoTotal").textContent = tiempoTotal + " min";
+}
+
+function recalcularTiempos() {
+    actualizarEstadisticas();
+    mostrarMensaje("Tiempos recalculados con el nuevo tiempo de parada", "info");
+}
+
+
 
 /* ============================================================
    INICIO
