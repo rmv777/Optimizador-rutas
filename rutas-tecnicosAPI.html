@@ -134,6 +134,7 @@ function initMap() {
 window.onload = initMap;
 
 // OCR
+
 async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
@@ -148,7 +149,6 @@ async function procesarImagenOCR(event) {
         );
 
         const texto = resultado.data.text;
-        console.log("OCR detectado:", texto);
 
         const lineas = texto
             .split("\n")
@@ -160,8 +160,6 @@ async function procesarImagenOCR(event) {
             return;
         }
 
-        mostrarMensaje("Direcciones detectadas. Calculando distancias a Valencina...", "info");
-
         calcularDistanciasYOrdenar(lineas);
 
     } catch (error) {
@@ -169,6 +167,8 @@ async function procesarImagenOCR(event) {
         mostrarMensaje("Error procesando la imagen", "advertencia");
     }
 }
+</script>
+
 
 // Distancias a Valencina usando Distance Matrix
 function calcularDistanciasYOrdenar(direcciones) {
@@ -224,15 +224,28 @@ function limpiarMarcadores() {
     bounds = new google.maps.LatLngBounds();
 }
 
-function pintarListaYMapa(datos) {
-    const lista = document.getElementById("lista-direcciones");
-    lista.innerHTML = "";
-    limpiarMarcadores();
+datos.forEach((item, idx) => {
+    const li = document.createElement("li");
+    li.innerHTML = `
+        <strong>${idx + 1}. ${item.direccion}</strong><br>
+        <span class="dist">Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})</span>
+    `;
+    lista.appendChild(li);
 
-    const geocoder = new google.maps.Geocoder();
+    // Geocodificar cada dirección para poner marcador
+    geocoder.geocode({ address: item.direccion }, (results, status) => {
+        if (status === "OK" && results[0]) {
+            const pos = results[0].geometry.location;
+            const marker = new google.maps.Marker({
+                map,
+                position: pos,
+                label: String(idx + 1),
+                title: item.direccion
+            });
+            markers.push(marker);
+            bounds.extend(pos);
+            map.fitBounds(bounds);
+        }
+    });
+});
 
-    datos.forEach((item, idx) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-            <strong>${idx + 1}. ${item.direccion}</strong><br>
-            <span class="dist">
