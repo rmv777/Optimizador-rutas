@@ -451,40 +451,9 @@ function recalcularTiempos() {
     mostrarMensaje("Tiempos recalculados con el nuevo tiempo de parada", "info");
 }
 function obtenerCoordenadasDesdeTexto(texto) {
-    return new Promise((resolve, reject) => {
-        const service = new google.maps.places.AutocompleteService();
+    return new Promise((resolve, reject) => {      
         const geocoder = new google.maps.Geocoder();
 
-        // 1. Buscar sugerencias
-        service.getPlacePredictions(
-            {
-                input: texto,
-                componentRestrictions: { country: "es" }
-            },
-            (predicciones, status) => {
-                if (status !== google.maps.places.PlacesServiceStatus.OK || !predicciones.length) {
-                    resolve(null);
-                    return;
-                }
-
-                // 2. Geocodificar la primera sugerencia
-                geocoder.geocode(
-                    { placeId: predicciones[0].place_id },
-                    (resultados, status2) => {
-                        if (status2 === "OK" && resultados[0]) {
-                            const loc = resultados[0].geometry.location;
-                            resolve({
-                                lat: loc.lat(),
-                                lng: loc.lng(),
-                                direccionFormateada: resultados[0].formatted_address
-                            });
-                        } else {
-                            resolve(null);
-                        }
-                    }
-                );
-            }
-        );
     });
 }
 
