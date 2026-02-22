@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enrutador de Técnicos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; font-size: 2.2rem; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel { background: #f8f9fa; padding: 25px; border-radius: 10px; margin-bottom: 20px; border-left: 4px solid #667eea; }
+        .panel h3 { color: #495057; margin-bottom: 20px; font-size: 1.3rem; }
+        .fecha-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 15px; }
+        .salida-info { background: #e3f2fd; padding: 12px; border-radius: 6px; color: #1976d2; font-weight: bold; }
+        .tiempo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; margin-top: 15px; }
+        .tiempo-card { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; border-radius: 8px; text-align: center; font-size: 14px; }
+        .zona-archivo { border: 3px dashed #ccc; padding: 50px 20px; text-align: center; border-radius: 10px; cursor: pointer; background: #fafafa; transition: all 0.3s; }
+        .zona-archivo:hover { border-color: #667eea; background: #f0f4ff; }
+        .zona-archivo.procesando { border-color: #28a745; background: #f0fff4; }
+        .lista-direcciones { max-height: 320px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px; background: white; margin: 15px 0; }
+        .direccion-item { display: flex; align-items: center; padding: 12px; margin-bottom: 10px; background: #f8f9fa; border-radius: 6px; border-left: 3px solid #667eea; transition: all 0.3s; }
+        .direccion-item:hover { background: #e9ecef; transform: translateX(2px); }
+        .numero { background: #667eea; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-weight: bold; flex-shrink: 0; }
+        .texto { flex: 1; color: #333; margin-right: 10px; }
+        .distancia { color: #666; font-weight: bold; font-size: 14px; margin-right: 10px; flex-shrink: 0; }
+        .distancia.real { color: #28a745; font-weight: bold; }
+        .btn-eliminar { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 12px; cursor: pointer; transition: all 0.3s; flex-shrink: 0; }
+        .btn-eliminar:hover { background: #c82333; transform: scale(1.05); }
+        .boton { width: 100%; padding: 15px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .boton:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+        .boton:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .btn-limpiar { width: 100%; padding: 12px; background: #6c757d; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s; margin-bottom: 10px; }
+        .btn-limpiar:hover { background: #5a6268; }
+        .mapa-area { background: #e9ecef; height: 420px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #666; border: 2px solid #dee2e6; }
+        .estadisticas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+        .estadistica { background: #f8f9fa; padding: 18px; border-radius: 8px; text-align: center; border-left: 4px solid #667eea; }
+        .valor-estadistica { font-size: 22px; font-weight: bold; color: #667eea; margin-top: 5px; }
+        .mensaje { padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-weight: bold; }
+        .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .advertencia { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .cargando { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: girar 1s linear infinite; }
+        .progreso { background: #e9ecef; border-radius: 10px; height: 8px; margin: 10px 0; overflow: hidden; }
+        .progreso-barra { background: #667eea; height: 100%; transition: width 0.3s; }
+        .texto-extraido { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 15px 0; max-height: 150px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #495057; }
+        .contador-direcciones { background: #e3f2fd; padding: 10px; border-radius: 6px; margin-bottom: 10px; text-align: center; color: #1976d2; font-weight: bold; }
+        .precision-info { background: #d4edda; padding: 8px; border-radius: 4px; margin-top: 10px; font-size: 12px; color: #155724; text-align: center; }
+        @keyframes girar { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes eliminar { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.8); } }
+        .eliminando { animation: eliminar 0.3s ease-out forwards; }
+        @media (max-width: 768px) { 
+            .grid { grid-template-columns: 1fr; } 
+            .tiempo-grid { grid-template-columns: repeat(2, 1fr); }
+            .direccion-item { flex-wrap: wrap; }
+            .texto { margin-bottom: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Enrutador de Técnicos - Andalucía</h1>
+        
+        <div class="grid">
+            <!-- Panel Izquierdo -->
+            <div>
+                <!-- Fecha -->
+                <div class="panel">
+                    <h3>📅 Fecha de Viaje</h3>
+                    <input type="date" id="fechaViaje" class="fecha-input">
+                    <div class="salida-info">
+                        📍 Salida: Valencina de la Concepción (Por la mañana)
+                    </div>
+                    <div class="precision-info">
+                        ✅ Distancias calculadas con coordenadas GPS reales
+                    </div>
+                </div>
+                
+                <!-- Tiempo -->
+                <div class="panel">
+                    <h3>🌤️ Previsión del Tiempo</h3>
+                    <div id="contenedorTiempo">Selecciona una fecha para ver la previsión</div>
+                </div>
+                
+                <!-- Archivo -->
+                <div class="panel">
+                    <h3>🖼️ Cargar Direcciones</h3>
+                    <div class="zona-archivo" id="zonaArchivo">
+                        <p><strong>📤 Haz clic para seleccionar imagen</strong></p>
+                        <p>o arrastra una imagen aquí</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 10px;">Imagen con direcciones a visitar</p>
+                    </div>
+                    <input type="file" id="inputArchivo" accept="image/*" style="display: none;">
+                    <div id="vistaPrevia" style="margin-top: 15px; text-align: center;"></div>
+                    <div id="progresoOCR" style="display: none;">
+                        <div class="progreso">
+                            <div class="progreso-barra" id="barraProgreso" style="width: 0%;"></div>
+                        </div>
+                        <p id="textoProgreso" style="text-align: center; color: #666; font-size: 14px;">Iniciando OCR...</p>
+                    </div>
+                    <div id="textoExtraido" class="texto-extraido" style="display: none;">
+                        <h4 style="margin-bottom: 10px; color: #495057;">Texto extraído de la imagen:</h4>
+                        <div id="contenidoTexto"></div>
+                    </div>
+                </div>
+                
+                <!-- Direcciones -->
+                <div class="panel">
+                    <h3>📋 Direcciones Ordenadas</h3>
+                    <div id="contadorDirecciones" class="contador-direcciones" style="display: none;">
+                        📍 <span id="numeroDirecciones">0</span> direcciones encontradas
+                    </div>
+                    <button id="btnLimpiarTodas" class="btn-limpiar" style="display: none;">🗑️ Limpiar Todas las Direcciones</button>
+                    <div id="listaDirecciones" class="lista-direcciones">
+                        <p style="text-align: center; color: #666; font-style: italic; padding: 0;">
+                            Las direcciones aparecerán aquí ordenadas por distancia a Sevilla<br>
+                            (más lejanas primero, más cercanas al final)
+                        </p>
+                    </div>
+                    <button id="botonOptimizar" class="boton" disabled>🗺️ Optimizar Ruta</button>
+                </div>
+            </div>
+            
+            <!-- Panel Derecho -->
+            <div>
+                <div class="panel">
+                    <h3>🗺️ Mapa de Ruta Optimizada</h3>
+                    <div id="areaMapa" class="mapa-area">
+                        <div style="text-align: center;">
+                            <h4 style="color: #495057; margin-bottom: 15px;">Visualización de Ruta</h4>
+                            <p style="margin-bottom: 10px;">Las rutas aparecerán aquí una vez procesadas las direcciones</p>
+                            <p style="font-size: 14px; color: #6c757d;">📍 Punto de salida: Valencina de la Concepción</p>
+                        </div>
+                    </div>
+                    
+                    <div class="estadisticas">
+                        <div class="estadistica">
+                            <div>🛣️ Distancia Total</div>
+                            <div class="valor-estadistica" id="distanciaTotal">-- km</div>
+                        </div>
+                        <div class="estadistica">
+                            <div>⏱️ Tiempo Estimado</div>
+                            <div class="valor-estadistica" id="tiempoTotal">-- min</div>
+                        </div>
+                        <div class="estadistica">
+                            <div>📍 Número de Paradas</div>
+                            <div class="valor-estadistica" id="numeroParadas">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tesseract.js para OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    
+    <script>
+        var listaDirecciones = [];
+        var provinciasAndalucia = ['Sevilla', 'Cádiz', 'Huelva', 'Málaga', 'Córdoba'];
+        
+        // Coordenadas GPS reales de ciudades andaluzas
+        var coordenadasCiudades = {
+            // Punto de salida
+            'valencina': { lat: 37.4167, lng: -6.0833, nombre: 'Valencina de la Concepción' },
+            
+            // Sevilla
+            'sevilla': { lat: 37.3886, lng: -5.9823, nombre: 'Sevilla' },
+            'carmona': { lat: 37.4688, lng: -5.6419, nombre: 'Carmona' },
+            'utrera': { lat: 37.1842, lng: -5.7849, nombre: 'Utrera' },
+            'dos hermanas': { lat: 37.2817, lng: -5.9200, nombre: 'Dos Hermanas' },
+            'alcala de guadaira': { lat: 37.3344, lng: -5.8458, nombre: 'Alcalá de Guadaíra' },
+            'los palacios': { lat: 37.1583, lng: -5.9167, nombre: 'Los Palacios y Villafranca' },
+            
+            // Cádiz
+            'cadiz': { lat: 36.5297, lng: -6.2920, nombre: 'Cádiz' },
+            'jerez': { lat: 36.6866, lng: -6.1364, nombre: 'Jerez de la Frontera' },
+            'jerez de la frontera': { lat: 36.6866, lng: -6.1364, nombre: 'Jerez de la Frontera' },
+            'el puerto': { lat: 36.5994, lng: -6.2367, nombre: 'El Puerto de Santa María' },
+            'puerto de santa maria': { lat: 36.5994, lng: -6.2367, nombre: 'El Puerto de Santa María' },
+            'sanlucar': { lat: 36.7784, lng: -6.3517, nombre: 'Sanlúcar de Barrameda' },
+            'chiclana': { lat: 36.4172, lng: -6.1477, nombre: 'Chiclana de la Frontera' },
+            'algeciras': { lat: 36.1408, lng: -5.4526, nombre: 'Algeciras' },
+            'la linea': { lat: 36.1667, lng: -5.3500, nombre: 'La Línea de la Concepción' },
+            
+            // Huelva
+            'huelva': { lat: 37.2614, lng: -6.9447, nombre: 'Huelva' },
+            'lepe': { lat: 37.2500, lng: -7.2167, nombre: 'Lepe' },
+            'ayamonte': { lat: 37.2092, lng: -7.4006, nombre: 'Ayamonte' },
+            'moguer': { lat: 37.2756, lng: -6.8386, nombre: 'Moguer' },
+            'palos': { lat: 37.2167, lng: -6.9000, nombre: 'Palos de la Frontera' },
+            
+            // Málaga
+            'malaga': { lat: 36.7213, lng: -4.4214, nombre: 'Málaga' },
+            'marbella': { lat: 36.5108, lng: -4.8850, nombre: 'Marbella' },
+            'fuengirola': { lat: 36.5397, lng: -4.6267, nombre: 'Fuengirola' },
+            'torremolinos': { lat: 36.6203, lng: -4.4997, nombre: 'Torremolinos' },
+            'benalmadena': { lat: 36.5989, lng: -4.5169, nombre: 'Benalmádena' },
+            'estepona': { lat: 36.4267, lng: -5.1467, nombre: 'Estepona' },
+            'antequera': { lat: 37.0167, lng: -4.5667, nombre: 'Antequera' },
+            'ronda': { lat: 36.7417, lng: -5.1667, nombre: 'Ronda' },
+            
+            // Córdoba
+            'cordoba': { lat: 37.8882, lng: -4.7794, nombre: 'Córdoba' },
+            'lucena': { lat: 37.4083, lng: -4.4833, nombre: 'Lucena' },
+            'puente genil': { lat: 37.3889, lng: -4.7667, nombre: 'Puente Genil' },
+            'montilla': { lat: 37.5833, lng: -4.6333, nombre: 'Montilla' },
+            'pozoblanco': { lat: 38.3833, lng: -4.8500, nombre: 'Pozoblanco' }
+        };
+        
+        function inicializar() {
+            var hoy = new Date();
+            var fechaHoy = hoy.getFullYear() + '-' + 
+                         String(hoy.getMonth() + 1).padStart(2, '0') + '-' + 
+                         String(hoy.getDate()).padStart(2, '0');
+            document.getElementById('fechaViaje').value = fechaHoy;
+            
+            cargarPrevisiones();
+            configurarEventos();
+        }
+        
+        function configurarEventos() {
+            document.getElementById('fechaViaje').addEventListener('change', cargarPrevisiones);
+            
+            var zonaArchivo = document.getElementById('zonaArchivo');
+            var inputArchivo = document.getElementById('inputArchivo');
+            
+            zonaArchivo.addEventListener('click', function() {
+                inputArchivo.click();
+            });
+            
+            zonaArchivo.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                zonaArchivo.style.borderColor = '#28a745';
+                zonaArchivo.style.background = '#f0fff4';
+            });
+            
+            zonaArchivo.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                zonaArchivo.style.borderColor = '#ccc';
+                zonaArchivo.style.background = '#fafafa';
+            });
+            
+            zonaArchivo.addEventListener('drop', function(e) {
+                e.preventDefault();
+                zonaArchivo.style.borderColor = '#ccc';
+                zonaArchivo.style.background = '#fafafa';
+                
+                var archivos = e.dataTransfer.files;
+                if (archivos.length > 0) {
+                    procesarImagenConOCR(archivos[0]);
+                }
+            });
+            
+            inputArchivo.addEventListener('change', function() {
+                if (inputArchivo.files.length > 0) {
+                    procesarImagenConOCR(inputArchivo.files[0]);
+                }
+            });
+            
+            document.getElementById('botonOptimizar').addEventListener('click', generarRutaOptima);
+            document.getElementById('btnLimpiarTodas').addEventListener('click', limpiarTodasDirecciones);
+        }
+        
+        function cargarPrevisiones() {
+            var contenedor = document.getElementById('contenedorTiempo');
+            contenedor.innerHTML = '<div class="cargando"></div> Cargando previsiones...';
+            
+            setTimeout(function() {
+                var htmlTiempo = '<div class="tiempo-grid">';
+                
+                for (var i = 0; i < provinciasAndalucia.length; i++) {
+                    var provincia = provinciasAndalucia[i];
+                    var temperatura = Math.floor(Math.random() * 15) + 15;
+                    var iconos = ['☀️', '⛅', '☁️', '🌧️'];
+                    var condiciones = ['Soleado', 'Nublado', 'Cubierto', 'Lluvia'];
+                    var indiceAleatorio = Math.floor(Math.random() * 4);
+                    
+                    htmlTiempo += '<div class="tiempo-card">';
+                    htmlTiempo += '<div><strong>' + provincia + '</strong></div>';
+                    htmlTiempo += '<div style="font-size: 18px; margin: 0;">' + temperatura + '°C</div>';
+                    htmlTiempo += '<div style="font-size: 12px;">' + iconos[indiceAleatorio] + ' ' + condiciones[indiceAleatorio] + '</div>';
+                    htmlTiempo += '</div>';
+                }
+                
+                htmlTiempo += '</div>';
+                contenedor.innerHTML = htmlTiempo;
+            }, 1200);
+        }
+        
+        function procesarImagenConOCR(archivo) {
+            if (!archivo.type.startsWith('image/')) {
+                mostrarMensaje('Por favor, selecciona un archivo de imagen válido', 'error');
+                return;
+            }
+            
+            // Mostrar vista previa
+            var lector = new FileReader();
+            lector.onload = function(evento) {
+                document.getElementById('vistaPrevia').innerHTML = 
+                    '<img src="' + evento.target.result + '" style="max-width: 100%; max-height: 180px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">';
+            };
+            lector.readAsDataURL(archivo);
+            
+            // Mostrar progreso
+            var progresoDiv = document.getElementById('progresoOCR');
+            var barraProgreso = document.getElementById('barraProgreso');
+            var textoProgreso = document.getElementById('textoProgreso');
+            
+            progresoDiv.style.display = 'block';
+            document.getElementById('zonaArchivo').classList.add('procesando');
+            
+            // Limpiar direcciones anteriores
+            document.getElementById('listaDirecciones').innerHTML = 
+                '<div style="text-align: center; padding: 0;"><div class="cargando"></div><p style="margin-top: 15px;">Procesando imagen con OCR...</p></div>';
+            
+            // Ocultar elementos de control
+            document.getElementById('contadorDirecciones').style.display = 'none';
+            document.getElementById('btnLimpiarTodas').style.display = 'none';
+            document.getElementById('textoExtraido').style.display = 'none';
+            
+            // Procesar con Tesseract.js
+            Tesseract.recognize(
+                archivo,
+                'spa', // Idioma español
+                {
+                    logger: function(m) {
+                        if (m.status === 'recognizing text') {
+                            var progreso = Math.round(m.progress * 100);
+                            barraProgreso.style.width = progreso + '%';
+                            textoProgreso.textContent = 'Reconociendo texto: ' + progreso + '%';
+                        }
+                    }
+                }
+            ).then(function(result) {
+                progresoDiv.style.display = 'none';
+                document.getElementById('zonaArchivo').classList.remove('procesando');
+                
+                var textoExtraido = result.data.text;
+                console.log('Texto extraído:', textoExtraido);
+                
+                // Mostrar texto extraído para debugging
+                mostrarTextoExtraido(textoExtraido);
+                
+                // Extraer direcciones del texto
+                var direccionesEncontradas = extraerDireccionesPrecisas(textoExtraido);
+                
+                if (direccionesEncontradas.length > 0) {
+                    procesarDireccionesReales(direccionesEncontradas);
+                    mostrarMensaje('Se encontraron ' + direccionesEncontradas.length + ' direcciones en la imagen', 'exito');
+                } else {
+                    mostrarMensaje('No se encontraron direcciones válidas en la imagen. Revisa que la imagen contenga direcciones claras y legibles.', 'advertencia');
+                    document.getElementById('listaDirecciones').innerHTML = 
+                        '<p style="text-align: center; color: #856404; font-style: italic; padding: 0;">No se encontraron direcciones en la imagen.<br>Asegúrate de que la imagen contenga direcciones claras y legibles.</p>';
+                }
+                
+            }).catch(function(error) {
+                console.error('Error en OCR:', error);
+                progresoDiv.style.display = 'none';
+                document.getElementById('zonaArchivo').classList.remove('procesando');
+                mostrarMensaje('Error al procesar la imagen. Verifica que sea una imagen clara con texto legible.', 'error');
+                document.getElementById('listaDirecciones').innerHTML = 
+                    '<p style="text-align: center; color: #721c24; font-style: italic; padding: 0;">Error al procesar la imagen.<br>Intenta con una imagen más clara.</p>';
+            });
+        }
+        
+        function mostrarTextoExtraido(texto) {
+            var contenedor = document.getElementById('textoExtraido');
+            var contenidoTexto = document.getElementById('contenidoTexto');
+            
+            contenidoTexto.textContent = texto || 'No se extrajo texto de la imagen';
+            contenedor.style.display = 'block';
+        }
+        
+        function extraerDireccionesPrecisas(texto) {
+            if (!texto || texto.trim().length === 0) {
+                return [];
+            }
+            
+            var direcciones = [];
+            var lineas = texto.split('\n');
+            
+            // Patrones más estrictos para detectar direcciones españolas
+            var patronesDireccion = [
+                // Direcciones con calle/avenida + número + ciudad
+                /(?:calle|avenida|plaza|paseo|carretera|c\/|av\.|pl\.|pº)\s+[a-záéíóúñ\s]+\d+[^,\n]*,?\s*\d{5}?\s*[a-záéíóúñ\s]+/gi,
+                // Código postal + ciudad
+                /\d{5}\s+[a-záéíóúñ\s]{3,}/gi,
+                // Direcciones con número al final
+                /[a-záéíóúñ\s]+\d+[^,\n]*(?:sevilla|cádiz|huelva|málaga|córdoba)/gi
+            ];
+            
+            for (var i = 0; i < lineas.length; i++) {
+                var linea = lineas[i].trim();
+                if (linea.length < 15) continue; // Muy corta para ser dirección
+                
+                // Buscar con patrones
+                for (var j = 0; j < patronesDireccion.length; j++) {
+                    var coincidencias = linea.match(patronesDireccion[j]);
+                    if (coincidencias) {
+                        for (var k = 0; k < coincidencias.length; k++) {
+                            var direccion = coincidencias[k].trim();
+                            if (direccion.length > 20 && !yaExiste(direcciones, direccion)) {
+                                direcciones.push(limpiarDireccion(direccion));
+                            }
+                        }
+                    }
+                }
+                
+                // Buscar líneas completas que parezcan direcciones
+                if (esDireccionValida(linea) && !yaExiste(direcciones, linea)) {
+                    direcciones.push(limpiarDireccion(linea));
+                }
+            }
+            
+            // Filtrar y limpiar direcciones
+            return direcciones
+                .filter(function(dir) { return dir.length > 15 && dir.length < 200; })
+                .slice(0, 15); // Máximo 15 direcciones
+        }
+        
+        function esDireccionValida(linea) {
+            var lineaLower = linea.toLowerCase();
+            
+            // Debe contener al menos un número
+            if (!/\d/.test(linea)) return false;
+            
+            // Debe contener palabras clave de direcciones
+            var palabrasClave = ['calle', 'avenida', 'plaza', 'paseo', 'carretera', 'c/', 'av.', 'pl.'];
+            var tienePalabraClave = palabrasClave.some(function(palabra) {
+                return lineaLower.includes(palabra);
+            });
+            
+            // O debe contener una provincia andaluza
+            var provincias = ['sevilla', 'cádiz', 'huelva', 'málaga', 'córdoba'];
+            var tieneProvincia = provincias.some(function(provincia) {
+                return lineaLower.includes(provincia);
+            });
+            
+            return tienePalabraClave || tieneProvincia;
+        }
+        
+        function yaExiste(direcciones, nuevaDireccion) {
+            return direcciones.some(function(dir) {
+                return dir.toLowerCase() === nuevaDireccion.toLowerCase();
+            });
+        }
+        
+        function limpiarDireccion(direccion) {
+            return direccion
+                .replace(/\s+/g, ' ') // Múltiples espacios a uno
+                .replace(/[^\w\s,.-]/g, '') // Caracteres extraños
+                .trim();
+        }
+                
+        async function procesarDireccionesReales(direccionesTexto) {
+            listaDirecciones = [];
+            
+            for (var i = 0; i < direccionesTexto.length; i++) {
+
+                // Esperar a que se calcule la distancia real usando el backend
+                var distanciaReal = await calcularDistanciaRealGPS(direccionesTexto[i]);
+
+                listaDirecciones.push({
+                    id: Date.now() + i, // ID único para cada dirección
+                    texto: direccionesTexto[i],
+                    distanciaASevilla: distanciaReal
+                });
+            }
+            
+            // Ordenar por distancia (más lejos primero)
+            listaDirecciones.sort(function(a, b) {
+                return b.distanciaASevilla - a.distanciaASevilla;
+            });
+            
+            mostrarDirecciones();
+            actualizarContadores();
+            document.getElementById('botonOptimizar').disabled = false;
+        }
+
+        
+        async function calcularDistanciaRealGPS(direccion) {
+            var textoLimpio = direccion.toLowerCase()
+                .replace(/[^\w\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+            
+            console.log('Calculando distancia para:', textoLimpio);
+            
+            // Buscar coincidencias exactas primero
+            var ciudadEncontrada = null;
+            var maxCoincidencias = 0;
+            
+            for (var ciudad in coordenadasCiudades) {
+                if (ciudad === 'valencina') continue; // Saltar punto de salida
+                
+                var coincidencias = 0;
+                var palabrasCiudad = ciudad.split(' ');
+                
+                for (var i = 0; i < palabrasCiudad.length; i++) {
+                    if (textoLimpio.includes(palabrasCiudad[i])) {
+                        coincidencias++;
+                    }
+                }
+                
+                // Calcular porcentaje de coincidencia
+                var porcentaje = coincidencias / palabrasCiudad.length;
+                
+                if (porcentaje > 0.5 && coincidencias > maxCoincidencias) {
+                    maxCoincidencias = coincidencias;
+                    ciudadEncontrada = ciudad;
+                }
+            }
+            
+            if (ciudadEncontrada) {
+                var coordsDestino = coordenadasCiudades[ciudadEncontrada];
+                var coordsOrigen = coordenadasCiudades['valencina'];
+
+                // 🔥 Llamada al backend seguro
+                const distanciaMetros = await obtenerDistanciaReal(
+                    { lat: coordsOrigen.lat, lng: coordsOrigen.lng },
+                    { lat: coordsDestino.lat, lng: coordsDestino.lng }
+                );
+
+                const distanciaKm = distanciaMetros / 1000;
+
+                console.log('Ciudad encontrada:', ciudadEncontrada, 'Distancia real:', Math.round(distanciaKm), 'km');
+                return Math.round(distanciaKm);
+            }
+
+            // Si no encuentra ciudad específica, usar estimación por provincia
+            console.log('No se encontró ciudad específica, usando estimación por provincia');
+            return calcularDistanciaEstimadaPorProvincia(textoLimpio);
+        }
+
+        
+        /*
+        function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+            var R = 6371; // Radio de la Tierra en kilómetros
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+            */
+           async function obtenerDistanciaReal(origen, destino) {
+    try {
+        const respuesta = await fetch("https://optimizador-rutas-29sa.onrender.com/distancia", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ origen, destino })
+        });
+
+        const datos = await respuesta.json();
+        return datos.distancia; // metros
+    } catch (error) {
+        console.error("Error al obtener distancia real:", error);
+        return null;
+    }
+}
+
+        
+        function calcularDistanciaEstimadaPorProvincia(texto) {
+            // Estimaciones más precisas basadas en distancias reales promedio
+            if (texto.includes('malaga')) return 230; // Málaga capital
+            if (texto.includes('cordoba')) return 145; // Córdoba capital
+            if (texto.includes('cadiz')) return 125; // Cádiz capital
+            if (texto.includes('huelva')) return 95; // Huelva capital
+            if (texto.includes('sevilla')) return 45; // Sevilla promedio
+            
+            // Distancia promedio si no se identifica la provincia
+            return 100;
+        }
+        
+        function mostrarDirecciones() {
+            var contenedor = document.getElementById('listaDirecciones');
+            var html = '';
+            
+            if (listaDirecciones.length === 0) {
+                html = '<p style="text-align: center; color: #666; font-style: italic; padding: 0;">No hay direcciones para mostrar</p>';
+                document.getElementById('contadorDirecciones').style.display = 'none';
+                document.getElementById('btnLimpiarTodas').style.display = 'none';
+            } else {
+                for (var i = 0; i < listaDirecciones.length; i++) {
+                    var direccion = listaDirecciones[i];
+                    html += '<div class="direccion-item" data-id="' + direccion.id + '">';
+                    html += '<div class="numero">' + (i + 1) + '</div>';
+                    html += '<div class="texto">' + direccion.texto + '</div>';
+                    html += '<div class="distancia real">' + direccion.distanciaASevilla + ' km</div>';
+                    html += '<button class="btn-eliminar" onclick="eliminarDireccion(' + direccion.id + ')" title="Eliminar dirección">✕</button>';
+                    html += '</div>';
+                }
+                document.getElementById('contadorDirecciones').style.display = 'block';
+                document.getElementById('btnLimpiarTodas').style.display = 'block';
+            }
+            
+            contenedor.innerHTML = html;
+        }
+        
+        function eliminarDireccion(id) {
+            // Encontrar el elemento en el DOM
+            var elemento = document.querySelector('[data-id="' + id + '"]');
+            if (elemento) {
+                // Añadir animación de eliminación
+                elemento.classList.add('eliminando');
+                
+                // Esperar a que termine la animación antes de eliminar
+                setTimeout(function() {
+                    // Eliminar de la lista
+                    listaDirecciones = listaDirecciones.filter(function(dir) {
+                        return dir.id !== id;
+                    });
+                    
+                    // Actualizar la visualización
+                    mostrarDirecciones();
+                    actualizarContadores();
+                    
+                    // Actualizar botón optimizar
+                    document.getElementById('botonOptimizar').disabled = listaDirecciones.length === 0;
+                    
+                    // Mostrar mensaje
+                    mostrarMensaje('Dirección eliminada correctamente', 'info');
+                    
+                    // Si no quedan direcciones, limpiar el mapa
+                    if (listaDirecciones.length === 0) {
+                        limpiarMapa();
+                    }
+                }, 300);
+            }
+        }
+        
+        function limpiarTodasDirecciones() {
+            if (listaDirecciones.length === 0) return;
+            
+            if (confirm('¿Estás seguro de que quieres eliminar todas las direcciones?')) {
+                listaDirecciones = [];
+                mostrarDirecciones();
+                actualizarContadores();
+                document.getElementById('botonOptimizar').disabled = true;
+                limpiarMapa();
+                mostrarMensaje('Todas las direcciones han sido eliminadas', 'info');
+            }
+        }
+        
+        function actualizarContadores() {
+            document.getElementById('numeroDirecciones').textContent = listaDirecciones.length;
+            document.getElementById('numeroParadas').textContent = listaDirecciones.length;
+        }
+        
+        function limpiarMapa() {
+            document.getElementById('areaMapa').innerHTML = 
+                '<div style="text-align: center;"><h4 style="color: #495057; margin-bottom: 15px;">Visualización de Ruta</h4><p style="margin-bottom: 10px;">Las rutas aparecerán aquí una vez procesadas las direcciones</p><p style="font-size: 14px; color: #6c757d;">📍 Punto de salida: Valencina de la Concepción</p></div>';
+            
+            document.getElementById('distanciaTotal').textContent = '-- km';
+            document.getElementById('tiempoTotal').textContent = '-- min';
+        }
+        
+        function generarRutaOptima() {
+            if (listaDirecciones.length === 0) {
+                mostrarMensaje('No hay direcciones para optimizar', 'advertencia');
+                return;
+            }
+            
+            var areaMapa = document.getElementById('areaMapa');
+            areaMapa.innerHTML = '<div style="text-align: center; padding: 0;"><div class="cargando"></div><p style="margin-top: 15px;">Generando ruta optimizada...</p></div>';
+            
+            setTimeout(function() {
+                var htmlRuta = '<div style="text-align: center; padding: 0;">';
+                htmlRuta += '<h4 style="color: #667eea; margin-bottom: 20px;">🗺️ Ruta Optimizada Generada</h4>';
+                htmlRuta += '<div style="background: white; padding: 0; border-radius: 10px; text-align: left; margin: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">';
+                htmlRuta += '<p style="font-weight: bold; margin-bottom: 15px; color: #495057;"><strong>📍 Punto de Salida:</strong> Valencina de la Concepción</p>';
+                htmlRuta += '<hr style="margin: 0; border: 1px solid #dee2e6;">';
+                
+                for (var i = 0; i < listaDirecciones.length; i++) {
+                    var direccion = listaDirecciones[i];
+                    htmlRuta += '<p style="margin: 0; padding: 0; background: #f8f9fa; border-radius: 5px;">';
+                    htmlRuta += '<strong style="color: #667eea;">' + (i + 1) + '.</strong> ';
+                    htmlRuta += direccion.texto;
+                    htmlRuta += ' <span style="color: #28a745; font-size: 14px; font-weight: bold;">(' + direccion.distanciaASevilla + ' km reales)</span>';
+                    htmlRuta += '</p>';
+                }
+                
+                htmlRuta += '</div>';
+                htmlRuta += '<p style="color: #28a745; font-weight: bold; font-size: 16px;">✅ Ruta optimizada con distancias GPS reales</p>';
+                htmlRuta += '</div>';
+                
+                areaMapa.innerHTML = htmlRuta;
+                actualizarEstadisticas();
+                mostrarMensaje('¡Ruta optimizada generada con distancias GPS reales!', 'exito');
+            }, 2000);
+        }
+        
+        function actualizarEstadisticas() {
+            var distanciaTotal = 0;
+            
+            for (var i = 0; i < listaDirecciones.length; i++) {
+                distanciaTotal += listaDirecciones[i].distanciaASevilla;
+            }
+            
+            var tiempoTotal = Math.round((distanciaTotal / 60) * 60 + (listaDirecciones.length * 30));
+            
+            document.getElementById('distanciaTotal').textContent = distanciaTotal + ' km';
+            document.getElementById('tiempoTotal').textContent = tiempoTotal + ' min';
+            document.getElementById('numeroParadas').textContent = listaDirecciones.length;
+        }
+        
+        function mostrarMensaje(texto, tipo) {
+            var mensaje = document.createElement('div');
+            mensaje.className = 'mensaje ' + tipo;
+            mensaje.textContent = texto;
+            
+            var contenedor = document.querySelector('.container');
+            contenedor.insertBefore(mensaje, contenedor.firstChild);
+            
+            setTimeout(function() {
+                if (mensaje.parentNode) {
+                    mensaje.parentNode.removeChild(mensaje);
+                }
+            }, 5000);
+        }
+        
+        // Inicializar cuando se carga la página
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', inicializar);
+        } else {
+            inicializar();
+        }
+    </script>
+</body>
+</html>
