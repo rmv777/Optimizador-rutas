@@ -126,43 +126,32 @@ let distanciaUltimaAValencina = null;
 
 
 async function calcularDistanciaRealGPS(texto) {
-    const textoLimpio = texto.toLowerCase().replace(/[^\w\s]/g, ' ').trim();
+    // 1. Obtener coordenadas reales con Google Places
+    const datos = await obtenerCoordenadasDesdeTexto(texto);
 
-    const coordenadasCiudades = {
-        "valencina": { lat: 37.4167, lng: -6.0833 },
-        "sevilla": { lat: 37.3891, lng: -5.9845 },
-        "dos hermanas": { lat: 37.2829, lng: -5.9209 },
-        "alcala de guadaira": { lat: 37.3374, lng: -5.8399 },
-        "mairena del aljarafe": { lat: 37.3446, lng: -6.0639 }
-        // ...
-    };
-
-    let ciudadEncontrada = Object.keys(coordenadasCiudades).find(c =>
-        textoLimpio.includes(c)
-    );
-
-    if (!ciudadEncontrada) {
+    if (!datos) {
+        console.warn("No se pudo geocodificar:", texto);
         return {
             texto,
-            ciudad: null,
             coords: null,
-            distanciaDesdeValencina: 100, // fallback
+            distanciaDesdeValencina: 100
         };
     }
 
-    const origen = coordenadasCiudades["valencina"];
-    const destino = coordenadasCiudades[ciudadEncontrada];
+    const coordsDestino = { lat: datos.lat, lng: datos.lng };
+    const coordsOrigen = { lat: 37.4167, lng: -6.0833 }; // Valencina
 
-    const metros = await obtenerDistanciaReal(origen, destino);
+    // 2. Distancia real desde tu backend
+    const metros = await obtenerDistanciaReal(coordsOrigen, coordsDestino);
     const km = Math.round(metros / 1000);
 
     return {
-        texto,
-        ciudad: ciudadEncontrada,
-        coords: destino,
+        texto: datos.direccionFormateada,
+        coords: coordsDestino,
         distanciaDesdeValencina: km
     };
 }
+
 
 
 async function procesarDireccionesReales(lista) {
@@ -456,6 +445,43 @@ function actualizarEstadisticas() {
 function recalcularTiempos() {
     actualizarEstadisticas();
     mostrarMensaje("Tiempos recalculados con el nuevo tiempo de parada", "info");
+}
+function obtenerCoordenadasDesdeTexto(texto) {
+    return new Promise((resolve, reject) => {
+        const service = new google.maps.places.AutocompleteService();
+        const geocoder = new google.maps.Geocoder();
+
+        // 1. Buscar sugerencias
+        service.getPlacePredictions(
+            {
+                input: texto,
+                componentRestrictions: { country: "es" }
+            },
+            (predicciones, status) => {
+                if (status !== google.maps.places.PlacesServiceStatus.OK || !predicciones.length) {
+                    resolve(null);
+                    return;
+                }
+
+                // 2. Geocodificar la primera sugerencia
+                geocoder.geocode(
+                    { placeId: predicciones[0].place_id },
+                    (resultados, status2) => {
+                        if (status2 === "OK" && resultados[0]) {
+                            const loc = resultados[0].geometry.location;
+                            resolve({
+                                lat: loc.lat(),
+                                lng: loc.lng(),
+                                direccionFormateada: resultados[0].formatted_address
+                            });
+                        } else {
+                            resolve(null);
+                        }
+                    }
+                );
+            }
+        );
+    });
 }
 
 
