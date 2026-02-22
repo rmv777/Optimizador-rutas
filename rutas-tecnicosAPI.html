@@ -213,6 +213,55 @@ function calcularDistanciasYOrdenar(direcciones) {
 
             mostrarMensaje("Direcciones ordenadas por distancia a Valencina (de más lejos a más cerca).", "exito");
 
+            <script>
+function calcularDistanciasYOrdenar(direcciones) {
+    const service = new google.maps.DistanceMatrixService();
+
+    service.getDistanceMatrix(
+        {
+            origins: [ORIGEN_FIJO],
+            destinations: direcciones,
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC
+        },
+        (response, status) => {
+            if (status !== "OK") {
+                console.error("Error DistanceMatrix:", status, response);
+                mostrarMensaje("Error calculando distancias: " + status, "advertencia");
+                return;
+            }
+
+            const results = response.rows[0].elements;
+            const datos = [];
+
+            for (let i = 0; i < results.length; i++) {
+                const el = results[i];
+                if (el.status === "OK") {
+                    datos.push({
+                        direccion: direcciones[i],
+                        distanciaTexto: el.distance.text,
+                        distanciaValor: el.distance.value,
+                        duracionTexto: el.duration.text
+                    });
+                }
+            }
+
+            if (datos.length === 0) {
+                mostrarMensaje("No se pudieron calcular distancias válidas.", "advertencia");
+                return;
+            }
+
+            // Ordenar de más lejos a más cerca
+            datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
+
+            mostrarMensaje("Direcciones ordenadas por distancia a Valencina.", "exito");
+
+            pintarListaYMapa(datos);
+        }
+    );
+}
+</script>
+    
             pintarListaYMapa(datos);
         }
     );
