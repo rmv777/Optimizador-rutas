@@ -36,44 +36,6 @@
 
 
     <button onclick="procesarEntrada()">Procesar direcciones</button>
-    
-    async function procesarImagenOCR(event) {
-    const archivo = event.target.files[0];
-    if (!archivo) return;
-
-    mostrarMensaje("Procesando imagen con OCR...", "info");
-
-    try {
-        const resultado = await Tesseract.recognize(
-            archivo,
-            'spa', // español
-            { logger: m => console.log(m) }
-        );
-
-        const texto = resultado.data.text;
-        console.log("OCR detectado:", texto);
-
-        // Convertir OCR en líneas limpias
-        const lineas = texto
-            .split("\n")
-            .map(l => l.trim())
-            .filter(l => l.length > 0);
-
-        if (lineas.length === 0) {
-            mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
-            return;
-        }
-
-        mostrarMensaje("Direcciones detectadas. Procesando...", "exito");
-
-        // Procesar direcciones reales con tu backend
-        await procesarDireccionesReales(lineas);
-
-    } catch (error) {
-        console.error("Error OCR:", error);
-        mostrarMensaje("Error procesando la imagen", "advertencia");
-    }
-}
 
     <button id="botonOptimizar" onclick="generarRutaOptima()" disabled>Optimizar ruta</button>
     <button onclick="limpiarTodasDirecciones()">Limpiar todas</button>
@@ -185,6 +147,44 @@ function procesarEntrada() {
 
     const lineas = texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
     procesarDireccionesReales(lineas);
+}
+
+   async function procesarImagenOCR(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+
+    mostrarMensaje("Procesando imagen con OCR...", "info");
+
+    try {
+        const resultado = await Tesseract.recognize(
+            archivo,
+            'spa', // español
+            { logger: m => console.log(m) }
+        );
+
+        const texto = resultado.data.text;
+        console.log("OCR detectado:", texto);
+
+        // Convertir OCR en líneas limpias
+        const lineas = texto
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+
+        if (lineas.length === 0) {
+            mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
+            return;
+        }
+
+        mostrarMensaje("Direcciones detectadas. Procesando...", "exito");
+
+        // Procesar direcciones reales con tu backend
+        await procesarDireccionesReales(lineas);
+
+    } catch (error) {
+        console.error("Error OCR:", error);
+        mostrarMensaje("Error procesando la imagen", "advertencia");
+    }
 }
 
 /* ============================================================
