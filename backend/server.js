@@ -17,23 +17,34 @@ app.use((req, res, next) => {
 });
 
 app.post("/distancia", async (req, res) => {
-  const { origen, destino } = req.body;
+  try {
+    const { origen, destino } = req.body;
 
-  const url = `https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${origen.lat},${origen.lng}&destinations=${destino.lat},${destino.lng}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${origen.lat},${origen.lng}&destinations=${destino.lat},${destino.lng}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
 
-  const respuesta = await fetch(url);
-  const datos = await respuesta.json();
+    const respuesta = await fetch(url);
+    const datos = await respuesta.json();
 
-  // Validación de errores de Google
-  if (!datos.rows || !datos.rows[0] || !datos.rows[0].elements || !datos.rows[0].elements[0]) {
-    console.error("Respuesta inesperada de Google:", datos);
-    return res.status(500).json({ error: "Error en la API de Google", datos });
+    const elemento = datos.rows[0].elements[0];
+
+    if (elemento.status !== "OK") {
+      return res.status(400).json({ error: "No se pudo calcular la distancia" });
+    }
+
+    const distancia = elemento.distance.value; // metros
+    const duracion = elemento.duration.value; // segundos
+
+    res.json({
+      distancia,
+      duracion
+    });
+
+  } catch (error) {
+    console.error("Error en /distancia:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
-
-  const distancia = datos.rows[0].elements[0].distance.value;
-
-  res.json({ distancia });
 });
+
 
 
 app.listen(PORT, () => {
