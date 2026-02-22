@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 10000;
 
 app.use(express.json());
 
+// CORS para tu frontend en GitHub Pages
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "https://rmv777.github.io");
   res.header("Access-Control-Allow-Headers", "Content-Type");
@@ -31,4 +32,3 @@ app.post("/distancia", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Backend funcionando en puerto ${PORT}`);
 });
-
