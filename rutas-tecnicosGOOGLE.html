@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Enrutador de Técnicos — Google Maps</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+        #areaMapa { width: 100%; height: 400px; background: #eee; }
+        .container { padding: 20px; }
+        .direccion-item { display: flex; justify-content: space-between; padding: 8px; background: #f8f9fa; margin-bottom: 5px; border-radius: 5px; }
+        .numero { font-weight: bold; color: #667eea; }
+        .distancia { color: #28a745; font-weight: bold; }
+        .mensaje { padding: 10px; margin-bottom: 10px; border-radius: 5px; }
+        .exito { background: #d4edda; color: #155724; }
+        .advertencia { background: #fff3cd; color: #856404; }
+        .info { background: #cce5ff; color: #004085; }
+    </style>
+
+    <!-- GOOGLE MAPS -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
+</head>
+
+<body>
+
+<div id="areaMapa"></div>
+
+<div class="container">
+    <h2>Enrutador de Técnicos (Google Maps)</h2>
+
+    <textarea id="entradaDirecciones" rows="6" style="width:100%;" placeholder="Pega aquí las direcciones..."></textarea>
+    <br><br>
+
+    <button onclick="procesarEntrada()">Procesar direcciones</button>
+    <button id="botonOptimizar" onclick="generarRutaOptima()" disabled>Optimizar ruta</button>
+    <button onclick="limpiarTodasDirecciones()">Limpiar todas</button>
+
+    <h3>Direcciones procesadas (<span id="numeroDirecciones">0</span>)</h3>
+    <div id="listaDirecciones"></div>
+
+    <h3>Estadísticas</h3>
+    <p>Distancia total: <span id="distanciaTotal">-- km</span></p>
+    <p>Tiempo total: <span id="tiempoTotal">-- min</span></p>
+</div>
+
+<script>
+/* ============================================================
+   GOOGLE MAPS — INICIALIZACIÓN
+============================================================ */
+let mapaGoogle;
+let marcadores = [];
+let directionsService;
+let directionsRenderer;
+
+function inicializarMapa() {
+    mapaGoogle = new google.maps.Map(document.getElementById("areaMapa"), {
+        center: { lat: 37.4167, lng: -6.0833 }, // Valencina
+        zoom: 10,
+        mapTypeId: "roadmap"
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: mapaGoogle
+    });
+}
+
+/* ============================================================
+   BACKEND — DISTANCIA REAL
+============================================================ */
+async function obtenerDistanciaReal(origen, destino) {
+    try {
+        const respuesta = await fetch("https://optimizador-rutas-29sa.onrender.com/distancia", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ origen, destino })
+        });
+
+        const datos = await respuesta.json();
+        return datos.distancia; // metros
+    } catch (error) {
+        console.error("Error al obtener distancia real:", error);
+        return null;
+    }
+}
+
+/* ============================================================
+   PROCESAMIENTO DE DIRECCIONES
+============================================================ */
+let listaDirecciones = [];
+
+async function calcularDistanciaRealGPS(texto) {
+    const textoLimpio = texto.toLowerCase().replace(/[^\w\s]/g, ' ').trim();
+
+    const coordenadasCiudades = {
+        "valencina": { lat: 37.4167, lng: -6.0833 },
+        "sevilla": { lat: 37.3891, lng: -5.9845 },
+        "dos hermanas": { lat: 37.2829, lng: -5.9209 },
+        "alcala de guadaira": { lat: 37.3374, lng: -5.8399 },
+        "mairena del aljarafe": { lat: 37.3446, lng: -6.0639 }
+        // Añade aquí todas tus ciudades
+    };
+
+    let ciudadEncontrada = Object.keys(coordenadasCiudades).find(c =>
+        textoLimpio.includes(c)
+    );
+
+    if (ciudadEncontrada) {
+        const origen = coordenadasCiudades["valencina"];
+        const destino = coordenadasCiudades[ciudadEncontrada];
+
+        const metros = await obtenerDistanciaReal(origen, destino);
+        return Math.round(metros / 1000);
+    }
+
+    return 100; // fallback
+}
+
+async function procesarDireccionesReales(lista) {
+    listaDirecciones = [];
+
+    for (let i = 0; i < lista.length; i++) {
+        const distancia = await calcularDistanciaRealGPS(lista[i]);
+
+        listaDirecciones.push({
+            id: Date.now() + i,
+            texto: lista[i],
+            distanciaASevilla: distancia
+        });
+    }
+
+    listaDirecciones.sort((a, b) => b.distanciaASevilla - a.distanciaASevilla);
+
+    mostrarDirecciones();
+    actualizarContadores();
+    document.getElementById("botonOptimizar").disabled = false;
+}
+
+function procesarEntrada() {
+    const texto = document.getElementById("entradaDirecciones").value.trim();
+    if (!texto) return;
+
+    const lineas = texto.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    procesarDireccionesReales(lineas);
+}
+
+/* ============================================================
+   GOOGLE MAPS — RUTA
+============================================================ */
+function dibujarRuta(origen, destino) {
+    directionsService.route(
+        {
+            origin,
+            destination,
+            travelMode: google.maps.TravelMode.DRIVING
+        },
+        (result, status) => {
+            if (status === "OK") {
+                directionsRenderer.setDirections(result);
+            }
+        }
+    );
+}
+
+function generarRutaOptima() {
+    if (listaDirecciones.length === 0) return;
+
+    const origen = { lat: 37.4167, lng: -6.0833 }; // Valencina
+    const destino = origen;
+
+    dibujarRuta(origen, destino);
+
+    mostrarMensaje("Ruta optimizada generada", "exito");
+}
+
+/* ============================================================
+   INTERFAZ
+============================================================ */
+function mostrarDirecciones() {
+    const cont = document.getElementById("listaDirecciones");
+    cont.innerHTML = "";
+
+    listaDirecciones.forEach((d, i) => {
+        cont.innerHTML += `
+            <div class="direccion-item">
+                <div class="numero">${i + 1}</div>
+                <div>${d.texto}</div>
+                <div class="distancia">${d.distanciaASevilla} km</div>
+            </div>
+        `;
+    });
+}
+
+function actualizarContadores() {
+    document.getElementById("numeroDirecciones").textContent = listaDirecciones.length;
+}
+
+function limpiarTodasDirecciones() {
+    listaDirecciones = [];
+    mostrarDirecciones();
+    actualizarContadores();
+    document.getElementById("botonOptimizar").disabled = true;
+    mostrarMensaje("Direcciones eliminadas", "info");
+}
+
+function mostrarMensaje(texto, tipo) {
+    const msg = document.createElement("div");
+    msg.className = `mensaje ${tipo}`;
+    msg.textContent = texto;
+
+    document.querySelector(".container").prepend(msg);
+
+    setTimeout(() => msg.remove(), 3000);
+}
+
+/* ============================================================
+   INICIO
+============================================================ */
+document.addEventListener("DOMContentLoaded", inicializarMapa);
+</script>
+
+</body>
+</html>
