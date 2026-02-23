@@ -154,6 +154,7 @@ async function procesarImagenOCR(event) {
 function calcularDistanciasDesdeValencina(listaDirecciones) {
     const service = new google.maps.DistanceMatrixService();
 
+    // Usamos SOLO las direcciones que vienen del parámetro
     const destinos = listaDirecciones.map(d => d.direccion);
 
     service.getDistanceMatrix(
@@ -181,7 +182,7 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
                 };
             });
 
-            // ORDENAR (de más lejos a más cerca, como tenías)
+            // ORDENAR (de más lejos a más cerca)
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
 
             // Pintar lista y mapa con el nuevo orden
@@ -189,6 +190,7 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
         }
     );
 }
+
 
 
 function limpiarMarcadores() {
