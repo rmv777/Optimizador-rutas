@@ -237,56 +237,77 @@ function pintarListaYMapa(datos) {
                 return;
             }
 
-datos.forEach((item, idx) => {
-    const li = document.createElement("li");
+            const coordenadasRuta = [];
 
-    let html = `
-        <strong>${idx + 1}. ${item.direccion}</strong><br>
-        Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
-    `;
+            datos.forEach((item, idx) => {
+                const li = document.createElement("li");
 
-    // TRAMO INICIAL: Valencina → primera dirección
-    if (idx === 0) {
-        const tramo = response.rows[0].elements[0];
-        html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-    }
+                let html = `
+                    <strong>${idx + 1}. ${item.direccion}</strong><br>
+                    Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
+                `;
 
-    // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
-    if (idx > 0) {
-        const tramo = response.rows[idx].elements[idx];
-        html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-    }
+                // TRAMO INICIAL: Valencina → primera dirección
+                if (idx === 0) {
+                    const tramo = response.rows[0].elements[0];
+                    html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
 
-    // TRAMO FINAL: última dirección → Valencina
-    if (idx === datos.length - 1) {
-        const tramo = response.rows[idx + 1].elements[idx + 1];
-        html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-    }
+                // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
+                if (idx > 0) {
+                    const tramo = response.rows[idx].elements[idx];
+                    html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
 
-    li.innerHTML = html;
-    lista.appendChild(li);
+                // TRAMO FINAL: última dirección → Valencina
+                if (idx === datos.length - 1) {
+                    const tramo = response.rows[idx + 1].elements[idx + 1];
+                    html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
 
-    // Marcadores en el mapa
-    geocoder.geocode({ address: item.direccion }, (results, status) => {
-        if (status === "OK" && results[0]) {
-            const pos = results[0].geometry.location;
-            const marker = new google.maps.Marker({
-                map,
-                position: pos,
-                label: String(idx + 1),
-                title: item.direccion,
+                li.innerHTML = html;
+                lista.appendChild(li);
+
+                // Geocodificar para obtener coordenadas
+                geocoder.geocode({ address: item.direccion }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const pos = results[0].geometry.location;
+
+                        // Añadir punto a la ruta
+                        coordenadasRuta.push(pos);
+
+                        // Marcador
+                        const marker = new google.maps.Marker({
+                            map,
+                            position: pos,
+                            label: String(idx + 1),
+                            title: item.direccion,
+                        });
+
+                        markers.push(marker);
+                        bounds.extend(pos);
+                        map.fitBounds(bounds);
+
+                        // Cuando ya tengamos todas las coordenadas → dibujar ruta
+                        if (coordenadasRuta.length === datos.length) {
+                            // Añadir Valencina al inicio y al final
+                            geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
+                                if (st === "OK" && res[0]) {
+                                    const origen = res[0].geometry.location;
+                                    coordenadasRuta.unshift(origen); // inicio
+                                    coordenadasRuta.push(origen);    // final
+
+                                    dibujarRutaCompleta(coordenadasRuta);
+                                }
+                            });
+                        }
+                    }
+                });
             });
-            markers.push(marker);
-            bounds.extend(pos);
-            map.fitBounds(bounds);
-        }
-    });
-});
-
-
         }
     );
 }
+
 
 
 </script>
