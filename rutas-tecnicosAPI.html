@@ -80,6 +80,10 @@ button:hover {
     <h3>Direcciones ordenadas por distancia a Valencina de la Concepción (de más lejos a más cerca)</h3>
     <ul id="lista-direcciones"></ul>
 
+    <button id="btn-recalcular" style="margin-top: 15px; padding: 10px; font-size: 16px;">
+    Recalcular ruta
+    </button>
+
     <h3>Mapa</h3>
     <div id="map"></div>
 
@@ -313,7 +317,9 @@ async function pintarListaYMapa(datos) {
             const li = document.createElement("li");
 
             let html = `
-                <strong>${i}. ${item.direccion}</strong><br>
+                <strong>${i}.</strong> 
+                <input type="text" class="direccion-editable" value="${item.direccion}" data-index="${i - 1}" style="width: 90%; margin-bottom: 5px;"><br>
+
             `;
 
             if (i === 1) {
@@ -356,7 +362,20 @@ async function pintarListaYMapa(datos) {
     lista.appendChild(liTotal);
 }
 
+    document.getElementById("btn-recalcular").addEventListener("click", () => {
+    // Leer todas las direcciones editadas
+    const inputs = document.querySelectorAll(".direccion-editable");
+    const nuevasDirecciones = [];
 
+    inputs.forEach(input => {
+        nuevasDirecciones.push({
+            direccion: input.value.trim()
+        });
+    });
+
+    // Volver a calcular distancias desde Valencina
+    calcularDistanciasDesdeValencina(nuevasDirecciones);
+});
 
 
 
