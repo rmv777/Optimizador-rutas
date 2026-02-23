@@ -80,6 +80,9 @@ button:hover {
     <h3>Direcciones ordenadas por distancia a Valencina de la Concepción (de más lejos a más cerca)</h3>
     <ul id="lista-direcciones"></ul>
     <button id="btn-recalcular">Recalcular ruta</button>
+    <button id="btn-exportar" style="margin-top: 10px; padding: 10px; font-size: 16px;">
+        Exportar ruta a Google Maps
+    </button>
 
     <h3>Mapa</h3>
     <div id="map"></div>
@@ -376,6 +379,28 @@ async function pintarListaYMapa(datos) {
     // Volver a calcular distancias desde Valencina
     calcularDistanciasDesdeValencina(nuevasDirecciones);
 });
+
+    document.getElementById("btn-exportar").addEventListener("click", () => {
+    const inputs = document.querySelectorAll(".direccion-editable");
+
+    // Leer direcciones en el orden actual
+    const direcciones = Array.from(inputs).map(input => input.value.trim());
+
+    if (direcciones.length === 0) {
+        mostrarMensaje("No hay direcciones para exportar", "advertencia");
+        return;
+    }
+
+    // Construir URL de Google Maps
+    const origen = encodeURIComponent(ORIGEN_FIJO);
+    const waypoints = direcciones.map(d => encodeURIComponent(d)).join("/");
+
+    const url = `https://www.google.com/maps/dir/${origen}/${waypoints}/${origen}`;
+
+    // Abrir en nueva pestaña
+    window.open(url, "_blank");
+});
+
 </script>
 </body>
 </html>
