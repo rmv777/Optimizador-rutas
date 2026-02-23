@@ -192,11 +192,10 @@ function limpiarMarcadores() {
 }
 
 function pintarListaYMapa(datos) {
-  const lista = document.getElementById("lista-direcciones");  
-  limpiarMarcadores();
-  lista.innerHTML = "";
-
-  const service = new google.maps.DistanceMatrixService();
+    const lista = document.getElementById("lista-direcciones");
+    limpiarMarcadores();
+    lista.innerHTML = "";
+ const service = new google.maps.DistanceMatrixService();
 
   datos.forEach((item, idx) => {
     const li = document.createElement("li");
