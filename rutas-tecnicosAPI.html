@@ -151,15 +151,17 @@ async function procesarImagenOCR(event) {
     }
 }
 
-function calcularDistanciasYOrdenar(direcciones) {
+function calcularDistanciasDesdeValencina(listaDirecciones) {
     const service = new google.maps.DistanceMatrixService();
+
+    const destinos = listaDirecciones.map(d => d.direccion);
 
     service.getDistanceMatrix(
         {
             origins: [ORIGEN_FIJO],
-            destinations: direcciones,
+            destinations: destinos,
             travelMode: google.maps.TravelMode.DRIVING,
-            unitSystem: google.maps.UnitSystem.METRIC
+            unitSystem: google.maps.UnitSystem.METRIC,
         },
         (response, status) => {
             if (status !== "OK") {
@@ -167,27 +169,27 @@ function calcularDistanciasYOrdenar(direcciones) {
                 return;
             }
 
-            const results = response.rows[0].elements;
-            const datos = [];
+            // Construimos el array con distancias
+            const datos = destinos.map((dir, idx) => {
+                const el = response.rows[0].elements[idx];
+                return {
+                    direccion: dir,
+                    distanciaTexto: el.distance.text,
+                    duracionTexto: el.duration.text,
+                    distanciaValor: el.distance.value,
+                    duracionValor: el.duration.value,
+                };
+            });
 
-            for (let i = 0; i < results.length; i++) {
-                const el = results[i];
-                if (el.status === "OK") {
-                    datos.push({
-                        direccion: direcciones[i],
-                        distanciaTexto: el.distance.text,
-                        distanciaValor: el.distance.value,
-                        duracionTexto: el.duration.text
-                    });
-                }
-            }
-
+            // ORDENAR (de más lejos a más cerca, como tenías)
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
 
+            // Pintar lista y mapa con el nuevo orden
             pintarListaYMapa(datos);
         }
     );
 }
+
 
 function limpiarMarcadores() {
     markers.forEach(m => m.setMap(null));
