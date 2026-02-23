@@ -292,6 +292,27 @@ function pintarListaYMapa(datos) {
   });
 }
 
+
+    lista.appendChild(li);
+
+    // Marcadores en el mapa (igual que ya tenías)
+    geocoder.geocode({ address: item.direccion }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const pos = results[0].geometry.location;
+        const marker = new google.maps.Marker({
+          map,
+          position: pos,
+          label: String(idx + 1),
+          title: item.direccion,
+        });
+        markers.push(marker);
+        bounds.extend(pos);
+        map.fitBounds(bounds);
+      }
+    });
+  });
+}
+
 </script>
 
 </body>
