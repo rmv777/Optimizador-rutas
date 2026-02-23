@@ -249,32 +249,33 @@ datos.forEach((item, idx) => {
         Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
     `;
 
-    // TRAMO INICIAL: Valencina → primera dirección
-    if (idx === 0) {
-        const tramo = response.rows[0].elements[0];
-        html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+// TRAMO INICIAL: Valencina → primera dirección
+if (idx === 0) {
+    const tramo = response.rows[0].elements[0];
+    html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-        totalDistancia += tramo.distance.value;
-        totalDuracion += tramo.duration.value;
-    }
+    totalDistancia += tramo.distance.value;
+    totalDuracion += tramo.duration.value;
+}
 
-    // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
-    if (idx > 0) {
-        const tramo = response.rows[idx].elements[idx];
-        html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+// TRAMOS INTERMEDIOS: dirección anterior → dirección actual
+if (idx > 0) {
+    const tramo = response.rows[idx].elements[idx - 1];
+    html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-        totalDistancia += tramo.distance.value;
-        totalDuracion += tramo.duration.value;
-    }
+    totalDistancia += tramo.distance.value;
+    totalDuracion += tramo.duration.value;
+}
 
-    // TRAMO FINAL: última dirección → Valencina
-    if (idx === datos.length - 1) {
-        const tramo = response.rows[idx + 1].elements[idx + 1];
-        html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+// TRAMO FINAL: última dirección → Valencina
+if (idx === datos.length - 1) {
+    const tramo = response.rows[idx + 1].elements[idx];
+    html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-        totalDistancia += tramo.distance.value;
-        totalDuracion += tramo.duration.value;
-    }
+    totalDistancia += tramo.distance.value;
+    totalDuracion += tramo.duration.value;
+}
+
 
     li.innerHTML = html;
     lista.appendChild(li);
