@@ -199,99 +199,72 @@ function pintarListaYMapa(datos) {
     const geocoder = new google.maps.Geocoder();
     const service = new google.maps.DistanceMatrixService();
 
-    datos.forEach((item, idx) => {
-        const li = document.createElement("li");
+    // Construimos orígenes y destinos para todos los tramos
+    const origins = [ORIGEN_FIJO, ...datos.map(d => d.direccion)];
+    const destinations = [...datos.map(d => d.direccion), ORIGEN_FIJO];
 
-        let html = `
-            <strong>${idx + 1}. ${item.direccion}</strong><br>
-            <span class="dist">Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})</span>
-        `;
-
-        // --- TRAMO INICIAL (Valencina → primera dirección) ---
-        if (idx === 0) {
-            service.getDistanceMatrix(
-                {
-                    origins: [ORIGEN_FIJO],
-                    destinations: [item.direccion],
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    unitSystem: google.maps.UnitSystem.METRIC,
-                },
-                (response, status) => {
-                    if (status === "OK") {
-                        const el = response.rows[0].elements[0];
-                        html += `<br><strong>Desde Valencina → primera:</strong> ${el.distance.text} (${el.duration.text})`;
-                    } else {
-                        html += `<br><strong>Desde Valencina → primera:</strong> error`;
-                    }
-                    li.innerHTML = html;
-                }
-            );
-        }
-
-        // --- TRAMOS INTERMEDIOS (dirección anterior → dirección actual) ---
-        if (idx > 0) {
-            const origen = datos[idx - 1].direccion;
-            const destino = item.direccion;
-
-            service.getDistanceMatrix(
-                {
-                    origins: [origen],
-                    destinations: [destino],
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    unitSystem: google.maps.UnitSystem.METRIC,
-                },
-                (response, status) => {
-                    if (status === "OK") {
-                        const el = response.rows[0].elements[0];
-                        html += `<br><strong>Desde la anterior:</strong> ${el.distance.text} (${el.duration.text})`;
-                    } else {
-                        html += `<br><strong>Desde la anterior:</strong> error`;
-                    }
-                    li.innerHTML = html;
-                }
-            );
-        }
-
-        // --- TRAMO FINAL (última dirección → Valencina) ---
-        if (idx === datos.length - 1) {
-            service.getDistanceMatrix(
-                {
-                    origins: [item.direccion],
-                    destinations: [ORIGEN_FIJO],
-                    travelMode: google.maps.TravelMode.DRIVING,
-                    unitSystem: google.maps.UnitSystem.METRIC,
-                },
-                (response, status) => {
-                    if (status === "OK") {
-                        const el = response.rows[0].elements[0];
-                        html += `<br><strong>Vuelta a Valencina:</strong> ${el.distance.text} (${el.duration.text})`;
-                    } else {
-                        html += `<br><strong>Vuelta a Valencina:</strong> error`;
-                    }
-                    li.innerHTML = html;
-                }
-            );
-        }
-
-        lista.appendChild(li);
-
-        // Marcadores en el mapa
-        geocoder.geocode({ address: item.direccion }, (results, status) => {
-            if (status === "OK" && results[0]) {
-                const pos = results[0].geometry.location;
-                const marker = new google.maps.Marker({
-                    map,
-                    position: pos,
-                    label: String(idx + 1),
-                    title: item.direccion,
-                });
-                markers.push(marker);
-                bounds.extend(pos);
-                map.fitBounds(bounds);
+    service.getDistanceMatrix(
+        {
+            origins,
+            destinations,
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+            if (status !== "OK") {
+                mostrarMensaje("Error calculando tramos: " + status, "advertencia");
+                return;
             }
-        });
-    });
+
+            datos.forEach((item, idx) => {
+                const li = document.createElement("li");
+
+                let html = `
+                    <strong>${idx + 1}. ${item.direccion}</strong><br>
+                    Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
+                `;
+
+                // TRAMO INICIAL: Valencina → primera dirección
+                if (idx === 0) {
+                    const tramo = response.rows[0].elements[0];
+                    html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
+
+                // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
+                if (idx > 0) {
+                    const tramo = response.rows[idx].elements[idx];
+                    html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
+
+                // TRAMO FINAL: última dirección → Valencina
+                if (idx === datos.length - 1) {
+                    const tramo = response.rows[idx + 1].elements[idx + 1];
+                    html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                }
+
+                li.innerHTML = html;
+                lista.appendChild(li);
+
+                // Marcadores en el mapa
+                geocoder.geocode({ address: item.direccion }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const pos = results[0].geometry.location;
+                        const marker = new google.maps.Marker({
+                            map,
+                            position: pos,
+                            label: String(idx + 1),
+                            title: item.direccion,
+                        });
+                        markers.push(marker);
+                        bounds.extend(pos);
+                        map.fitBounds(bounds);
+                    }
+                });
+            });
+        }
+    );
 }
+
 
 </script>
 
