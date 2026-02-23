@@ -143,7 +143,10 @@ async function procesarImagenOCR(event) {
             return;
         }
 
-        calcularDistanciasYOrdenar(lineas);
+        calcularDistanciasDesdeValencina(
+        lineas.map(d => ({ direccion: d }))
+    );
+
 
     } catch (error) {
         console.error("Error OCR:", error);
