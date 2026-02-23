@@ -192,36 +192,106 @@ function limpiarMarcadores() {
 }
 
 function pintarListaYMapa(datos) {
-    const lista = document.getElementById("lista-direcciones");
-    lista.innerHTML = "";
-    limpiarMarcadores();
+  limpiarMarcadores();
+  lista.innerHTML = "";
 
-    const geocoder = new google.maps.Geocoder();
+  const service = new google.maps.DistanceMatrixService();
 
-    datos.forEach((item, idx) => {
-        const li = document.createElement("li");
-        li.innerHTML = `
-            <strong>${idx + 1}. ${item.direccion}</strong><br>
-            <span class="dist">Distancia: ${item.distanciaTexto} (${item.duracionTexto})</span>
-        `;
-        lista.appendChild(li);
+  datos.forEach((item, idx) => {
+    const li = document.createElement("li");
 
-        geocoder.geocode({ address: item.direccion }, (results, status) => {
-            if (status === "OK" && results[0]) {
-                const pos = results[0].geometry.location;
-                const marker = new google.maps.Marker({
-                    map,
-                    position: pos,
-                    label: String(idx + 1),
-                    title: item.direccion
-                });
-                markers.push(marker);
-                bounds.extend(pos);
-                map.fitBounds(bounds);
-            }
+    // Texto base: distancia a Valencina (ya calculada antes)
+    let html = `
+      ${idx + 1}. ${item.direccion}<br>
+      Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
+    `;
+
+    // --- TRAMO INICIAL ---
+    if (idx === 0) {
+      service.getDistanceMatrix(
+        {
+          origins: [ORIGEN_FIJO],
+          destinations: [item.direccion],
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+          if (status === "OK") {
+            const el = response.rows[0].elements[0];
+            html += `<br><strong>Desde Valencina → primera:</strong> ${el.distance.text} (${el.duration.text})`;
+          } else {
+            html += `<br><strong>Desde Valencina → primera:</strong> error`;
+          }
+          li.innerHTML = html;
+        }
+      );
+    }
+
+    // --- TRAMOS INTERMEDIOS ---
+    if (idx > 0) {
+      const origen = datos[idx - 1].direccion;
+      const destino = item.direccion;
+
+      service.getDistanceMatrix(
+        {
+          origins: [origen],
+          destinations: [destino],
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+          if (status === "OK") {
+            const el = response.rows[0].elements[0];
+            html += `<br><strong>Desde la anterior:</strong> ${el.distance.text} (${el.duration.text})`;
+          } else {
+            html += `<br><strong>Desde la anterior:</strong> error`;
+          }
+          li.innerHTML = html;
+        }
+      );
+    }
+
+    // --- TRAMO FINAL (última → Valencina) ---
+    if (idx === datos.length - 1) {
+      service.getDistanceMatrix(
+        {
+          origins: [item.direccion],
+          destinations: [ORIGEN_FIJO],
+          travelMode: google.maps.TravelMode.DRIVING,
+          unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+          if (status === "OK") {
+            const el = response.rows[0].elements[0];
+            html += `<br><strong>Vuelta a Valencina:</strong> ${el.distance.text} (${el.duration.text})`;
+          } else {
+            html += `<br><strong>Vuelta a Valencina:</strong> error`;
+          }
+          li.innerHTML = html;
+        }
+      );
+    }
+
+    lista.appendChild(li);
+
+    // Marcadores en el mapa (igual que ya tenías)
+    geocoder.geocode({ address: item.direccion }, (results, status) => {
+      if (status === "OK" && results[0]) {
+        const pos = results[0].geometry.location;
+        const marker = new google.maps.Marker({
+          map,
+          position: pos,
+          label: String(idx + 1),
+          title: item.direccion,
         });
+        markers.push(marker);
+        bounds.extend(pos);
+        map.fitBounds(bounds);
+      }
     });
+  });
 }
+
 </script>
 
 </body>
