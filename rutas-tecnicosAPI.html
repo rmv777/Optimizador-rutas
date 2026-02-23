@@ -268,41 +268,47 @@ function pintarListaYMapa(datos) {
                 li.innerHTML = html;
                 lista.appendChild(li);
 
-                // Geocodificar para obtener coordenadas
-                geocoder.geocode({ address: item.direccion }, (results, status) => {
-                    if (status === "OK" && results[0]) {
-                        const pos = results[0].geometry.location;
+// Geocodificar para obtener coordenadas
+geocoder.geocode({ address: item.direccion }, (results, status) => {
+    if (status === "OK" && results[0]) {
+        const pos = results[0].geometry.location;
 
-                        // Añadir punto a la ruta
-                        coordenadasRuta.push(pos);
+        // Guardar coordenada en su posición correcta
+        coordenadasRuta[idx] = pos;
 
-                        // Marcador
-                        const marker = new google.maps.Marker({
-                            map,
-                            position: pos,
-                            label: String(idx + 1),
-                            title: item.direccion,
-                        });
+        // Marcador
+        const marker = new google.maps.Marker({
+            map,
+            position: pos,
+            label: String(idx + 1),
+            title: item.direccion,
+        });
 
-                        markers.push(marker);
-                        bounds.extend(pos);
-                        map.fitBounds(bounds);
+        markers.push(marker);
+        bounds.extend(pos);
+        map.fitBounds(bounds);
 
-                        // Cuando ya tengamos todas las coordenadas → dibujar ruta
-                        if (coordenadasRuta.length === datos.length) {
-                            // Añadir Valencina al inicio y al final
-                            geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
-                                if (st === "OK" && res[0]) {
-                                    const origen = res[0].geometry.location;
-                                    coordenadasRuta.unshift(origen); // inicio
-                                    coordenadasRuta.push(origen);    // final
+        // Cuando ya tengamos todas las coordenadas → dibujar ruta
+        if (coordenadasRuta.filter(Boolean).length === datos.length) {
 
-                                    dibujarRutaCompleta(coordenadasRuta);
-                                }
-                            });
-                        }
-                    }
-                });
+            // Añadir Valencina al inicio y al final
+            geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
+                if (st === "OK" && res[0]) {
+                    const origen = res[0].geometry.location;
+
+                    const rutaFinal = [
+                        origen,
+                        ...coordenadasRuta,
+                        origen
+                    ];
+
+                    dibujarRutaCompleta(rutaFinal);
+                }
+            });
+        }
+    }
+});
+
             });
         }
     );
