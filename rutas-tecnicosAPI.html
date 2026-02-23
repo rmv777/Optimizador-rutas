@@ -220,12 +220,11 @@ function pintarListaYMapa(datos) {
     const geocoder = new google.maps.Geocoder();
     const service = new google.maps.DistanceMatrixService();
 
-    // Construimos orígenes y destinos para todos los tramos
     const origins = [ORIGEN_FIJO, ...datos.map(d => d.direccion)];
     const destinations = [...datos.map(d => d.direccion), ORIGEN_FIJO];
 
-    let totalDistancia = 0; // metros
-    let totalDuracion = 0;  // segundos
+    let totalDistancia = 0;
+    let totalDuracion = 0;
 
     service.getDistanceMatrix(
         {
@@ -251,29 +250,26 @@ function pintarListaYMapa(datos) {
                     Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
                 `;
 
-                // TRAMO INICIAL: Valencina → primera dirección
+                // TRAMO INICIAL
                 if (idx === 0) {
                     const tramo = response.rows[0].elements[0];
                     html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-
                     totalDistancia += tramo.distance.value;
                     totalDuracion += tramo.duration.value;
                 }
 
-                // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
+                // TRAMOS INTERMEDIOS
                 if (idx > 0) {
                     const tramo = response.rows[idx].elements[idx - 1];
                     html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-
                     totalDistancia += tramo.distance.value;
                     totalDuracion += tramo.duration.value;
                 }
 
-                // TRAMO FINAL: última dirección → Valencina
+                // TRAMO FINAL
                 if (idx === datos.length - 1) {
                     const tramo = response.rows[idx + 1].elements[idx];
                     html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-
                     totalDistancia += tramo.distance.value;
                     totalDuracion += tramo.duration.value;
                 }
@@ -281,33 +277,27 @@ function pintarListaYMapa(datos) {
                 li.innerHTML = html;
                 lista.appendChild(li);
 
-                // Geocodificar para obtener coordenadas
+                // GEOCODIFICACIÓN PARA DIBUJAR RUTA
                 geocoder.geocode({ address: item.direccion }, (results, status) => {
                     geocodificacionesCompletadas++;
 
                     if (status === "OK" && results[0]) {
-                        const pos = results[0].geometry.location;
+                        coordenadasRuta[idx] = results[0].geometry.location;
 
-                        // Guardar coordenada en su posición correcta
-                        coordenadasRuta[idx] = pos;
-
-                        // Marcador
                         const marker = new google.maps.Marker({
                             map,
-                            position: pos,
+                            position: coordenadasRuta[idx],
                             label: String(idx + 1),
                             title: item.direccion,
                         });
 
                         markers.push(marker);
-                        bounds.extend(pos);
+                        bounds.extend(coordenadasRuta[idx]);
                         map.fitBounds(bounds);
                     }
 
-                    // Cuando TODAS las geocodificaciones hayan terminado
+                    // Cuando TODAS las geocodificaciones terminen → dibujar ruta
                     if (geocodificacionesCompletadas === datos.length) {
-
-                        // Añadir Valencina al inicio y al final
                         geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
                             if (st === "OK" && res[0]) {
                                 const origen = res[0].geometry.location;
@@ -318,36 +308,34 @@ function pintarListaYMapa(datos) {
                                     origen
                                 ];
 
-                                // Dibujar ruta si hay al menos 2 puntos
-                                if (rutaFinal.length >= 2) {
-                                    dibujarRutaCompleta(rutaFinal);
-                                }
-
-                                // --- MOSTRAR TOTALES ---
-                                const totalKm = (totalDistancia / 1000).toFixed(2);
-
-                                const horas = Math.floor(totalDuracion / 3600);
-                                const minutos = Math.floor((totalDuracion % 3600) / 60);
-
-                                const liTotal = document.createElement("li");
-                                liTotal.innerHTML = `
-                                    <strong>Total Km:</strong> ${totalKm} km<br>
-                                    <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
-                                `;
-                                liTotal.style.background = "#dff0d8";
-                                liTotal.style.padding = "10px";
-                                liTotal.style.marginTop = "10px";
-                                liTotal.style.border = "2px solid #b2d8b2";
-
-                                lista.appendChild(liTotal);
+                                dibujarRutaCompleta(rutaFinal);
                             }
                         });
                     }
                 });
             });
+
+            // ⭐⭐⭐ AÑADIMOS LOS TOTALES AQUÍ — SIEMPRE SE EJECUTA ⭐⭐⭐
+
+            const totalKm = (totalDistancia / 1000).toFixed(2);
+            const horas = Math.floor(totalDuracion / 3600);
+            const minutos = Math.floor((totalDuracion % 3600) / 60);
+
+            const liTotal = document.createElement("li");
+            liTotal.innerHTML = `
+                <strong>Total Km:</strong> ${totalKm} km<br>
+                <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
+            `;
+            liTotal.style.background = "#dff0d8";
+            liTotal.style.padding = "10px";
+            liTotal.style.marginTop = "10px";
+            liTotal.style.border = "2px solid #b2d8b2";
+
+            lista.appendChild(liTotal);
         }
     );
 }
+
 
 
 
