@@ -81,6 +81,14 @@ button:hover {
     <ul id="lista-direcciones"></ul>
     <button id="btn-recalcular">Recalcular ruta</button>
     <button id="btn-exportar">Exportar ruta a Google Maps</button>
+    <button id="btn-anadir" style="margin-top: 10px; padding: 10px; font-size: 16px;">
+    Añadir dirección
+    </button>
+    
+    <button id="btn-eliminar" style="margin-top: 10px; padding: 10px; font-size: 16px;">
+        Eliminar última dirección
+    </button>
+
     <h3>Mapa</h3>
     <div id="map"></div>
 
@@ -397,6 +405,40 @@ async function pintarListaYMapa(datos) {
     // Abrir en nueva pestaña
     window.open(url, "_blank");
 });
+
+    // --- BOTÓN AÑADIR DIRECCIÓN ---
+document.getElementById("btn-anadir").addEventListener("click", () => {
+    const lista = document.getElementById("lista-direcciones");
+
+    const nuevoLi = document.createElement("li");
+    nuevoLi.innerHTML = `
+        <strong>+</strong>
+        <input type="text" class="direccion-editable" value="" placeholder="Nueva dirección..." style="width: 90%; margin-bottom: 5px;"><br>
+    `;
+
+    lista.appendChild(nuevoLi);
+});
+
+
+// --- BOTÓN ELIMINAR ÚLTIMA DIRECCIÓN ---
+document.getElementById("btn-eliminar").addEventListener("click", () => {
+    const lista = document.getElementById("lista-direcciones");
+    const items = lista.querySelectorAll("li");
+
+    if (items.length === 0) {
+        mostrarMensaje("No hay direcciones que eliminar", "advertencia");
+        return;
+    }
+
+    // Elimina el último <li> que contenga un input editable
+    for (let i = items.length - 1; i >= 0; i--) {
+        if (items[i].querySelector(".direccion-editable")) {
+            items[i].remove();
+            break;
+        }
+    }
+});
+
 
 </script>
 </body>
