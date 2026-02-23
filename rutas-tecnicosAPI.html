@@ -275,7 +275,7 @@ function pintarListaYMapa(datos) {
     lista.appendChild(li);
 
     // Marcadores en el mapa (igual que ya tenías)
-    geocoder.geocode({ address: item.direccion }, (results, status) => {
+       geocoder.geocode({ address: item.direccion }, (results, status) => {
       if (status === "OK" && results[0]) {
         const pos = results[0].geometry.location;
         const marker = new google.maps.Marker({
@@ -290,7 +290,7 @@ function pintarListaYMapa(datos) {
       }
     });
   });
-}
+}   // ← cierre correcto de la función
 
 </script>
 
