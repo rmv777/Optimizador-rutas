@@ -224,6 +224,9 @@ function pintarListaYMapa(datos) {
     const origins = [ORIGEN_FIJO, ...datos.map(d => d.direccion)];
     const destinations = [...datos.map(d => d.direccion), ORIGEN_FIJO];
 
+    let totalDistancia = 0; // metros
+    let totalDuracion = 0;  // segundos
+
     service.getDistanceMatrix(
         {
             origins,
@@ -237,119 +240,115 @@ function pintarListaYMapa(datos) {
                 return;
             }
 
-const coordenadasRuta = [];
-let totalDistancia = 0; // en metros
-let totalDuracion = 0;  // en segundos
+            const coordenadasRuta = [];
+            let geocodificacionesCompletadas = 0;
 
-datos.forEach((item, idx) => {
-    const li = document.createElement("li");
+            datos.forEach((item, idx) => {
+                const li = document.createElement("li");
 
-    let html = `
-        <strong>${idx + 1}. ${item.direccion}</strong><br>
-        Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
-    `;
+                let html = `
+                    <strong>${idx + 1}. ${item.direccion}</strong><br>
+                    Distancia a Valencina: ${item.distanciaTexto} (${item.duracionTexto})
+                `;
 
-// TRAMO INICIAL: Valencina → primera dirección
-if (idx === 0) {
-    const tramo = response.rows[0].elements[0];
-    html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
+                // TRAMO INICIAL: Valencina → primera dirección
+                if (idx === 0) {
+                    const tramo = response.rows[0].elements[0];
+                    html += `<br><strong>Desde Valencina → primera:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-    totalDistancia += tramo.distance.value;
-    totalDuracion += tramo.duration.value;
-}
-
-// TRAMOS INTERMEDIOS: dirección anterior → dirección actual
-if (idx > 0) {
-    const tramo = response.rows[idx].elements[idx - 1];
-    html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-
-    totalDistancia += tramo.distance.value;
-    totalDuracion += tramo.duration.value;
-}
-
-// TRAMO FINAL: última dirección → Valencina
-if (idx === datos.length - 1) {
-    const tramo = response.rows[idx + 1].elements[idx];
-    html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
-
-    totalDistancia += tramo.distance.value;
-    totalDuracion += tramo.duration.value;
-}
-
-
-    li.innerHTML = html;
-    lista.appendChild(li);
-
-let geocodificacionesCompletadas = 0;
-
-geocoder.geocode({ address: item.direccion }, (results, status) => {
-    geocodificacionesCompletadas++;
-
-    if (status === "OK" && results[0]) {
-        const pos = results[0].geometry.location;
-
-        // Guardar coordenada en su posición correcta
-        coordenadasRuta[idx] = pos;
-
-        // Marcador
-        const marker = new google.maps.Marker({
-            map,
-            position: pos,
-            label: String(idx + 1),
-            title: item.direccion,
-        });
-
-        markers.push(marker);
-        bounds.extend(pos);
-        map.fitBounds(bounds);
-    }
-
-    // Cuando TODAS las geocodificaciones hayan terminado
-    if (geocodificacionesCompletadas === datos.length) {
-
-        // Añadir Valencina al inicio y al final
-        geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
-            if (st === "OK" && res[0]) {
-                const origen = res[0].geometry.location;
-
-                const rutaFinal = [
-                    origen,
-                    ...coordenadasRuta.filter(Boolean),
-                    origen
-                ];
-
-                // Dibujar ruta si hay al menos 2 puntos
-                if (rutaFinal.length >= 2) {
-                    dibujarRutaCompleta(rutaFinal);
+                    totalDistancia += tramo.distance.value;
+                    totalDuracion += tramo.duration.value;
                 }
 
-                // --- MOSTRAR TOTALES ---
-                const totalKm = (totalDistancia / 1000).toFixed(2);
+                // TRAMOS INTERMEDIOS: dirección anterior → dirección actual
+                if (idx > 0) {
+                    const tramo = response.rows[idx].elements[idx - 1];
+                    html += `<br><strong>Desde la anterior:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-                const horas = Math.floor(totalDuracion / 3600);
-                const minutos = Math.floor((totalDuracion % 3600) / 60);
+                    totalDistancia += tramo.distance.value;
+                    totalDuracion += tramo.duration.value;
+                }
 
-                const liTotal = document.createElement("li");
-                liTotal.innerHTML = `
-                    <strong>Total Km:</strong> ${totalKm} km<br>
-                    <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
-                `;
-                liTotal.style.background = "#dff0d8";
-                liTotal.style.padding = "10px";
-                liTotal.style.marginTop = "10px";
-                liTotal.style.border = "2px solid #b2d8b2";
+                // TRAMO FINAL: última dirección → Valencina
+                if (idx === datos.length - 1) {
+                    const tramo = response.rows[idx + 1].elements[idx];
+                    html += `<br><strong>Vuelta a Valencina:</strong> ${tramo.distance.text} (${tramo.duration.text})`;
 
-                lista.appendChild(liTotal);
-            }
-        });
-    }
-});
+                    totalDistancia += tramo.distance.value;
+                    totalDuracion += tramo.duration.value;
+                }
 
-});
+                li.innerHTML = html;
+                lista.appendChild(li);
 
+                // Geocodificar para obtener coordenadas
+                geocoder.geocode({ address: item.direccion }, (results, status) => {
+                    geocodificacionesCompletadas++;
+
+                    if (status === "OK" && results[0]) {
+                        const pos = results[0].geometry.location;
+
+                        // Guardar coordenada en su posición correcta
+                        coordenadasRuta[idx] = pos;
+
+                        // Marcador
+                        const marker = new google.maps.Marker({
+                            map,
+                            position: pos,
+                            label: String(idx + 1),
+                            title: item.direccion,
+                        });
+
+                        markers.push(marker);
+                        bounds.extend(pos);
+                        map.fitBounds(bounds);
+                    }
+
+                    // Cuando TODAS las geocodificaciones hayan terminado
+                    if (geocodificacionesCompletadas === datos.length) {
+
+                        // Añadir Valencina al inicio y al final
+                        geocoder.geocode({ address: ORIGEN_FIJO }, (res, st) => {
+                            if (st === "OK" && res[0]) {
+                                const origen = res[0].geometry.location;
+
+                                const rutaFinal = [
+                                    origen,
+                                    ...coordenadasRuta.filter(Boolean),
+                                    origen
+                                ];
+
+                                // Dibujar ruta si hay al menos 2 puntos
+                                if (rutaFinal.length >= 2) {
+                                    dibujarRutaCompleta(rutaFinal);
+                                }
+
+                                // --- MOSTRAR TOTALES ---
+                                const totalKm = (totalDistancia / 1000).toFixed(2);
+
+                                const horas = Math.floor(totalDuracion / 3600);
+                                const minutos = Math.floor((totalDuracion % 3600) / 60);
+
+                                const liTotal = document.createElement("li");
+                                liTotal.innerHTML = `
+                                    <strong>Total Km:</strong> ${totalKm} km<br>
+                                    <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
+                                `;
+                                liTotal.style.background = "#dff0d8";
+                                liTotal.style.padding = "10px";
+                                liTotal.style.marginTop = "10px";
+                                liTotal.style.border = "2px solid #b2d8b2";
+
+                                lista.appendChild(liTotal);
+                            }
+                        });
+                    }
+                });
+            });
         }
     );
 }
+
 
 
 
