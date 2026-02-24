@@ -70,6 +70,24 @@ button:hover {
     100% { opacity: 1; }
 }
 
+    #clima-contenedor {
+    display: flex;
+    flex-wrap: wrap; /* Para que salten de línea si no caben */
+    gap: 15px;
+    margin-top: 10px;
+}
+
+#clima-contenedor .tarjeta-clima {
+    flex: 1;
+    min-width: 180px; /* Evita que se hagan demasiado pequeñas */
+    max-width: 220px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f9f9f9;
+}
+
+
 </style>
 </head>
 
@@ -541,21 +559,22 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
             const tmin = data.daily.temperature_2m_min[0];
             const lluvia = data.daily.precipitation_probability_max[0];
 
-            html += `
-                <div style="padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:5px;">
-                    <strong>${ciudad.nombre}</strong><br>
-                    ${icono}<br>
-                    🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
-                    🌧️ Probabilidad de lluvia: ${lluvia}%
-                </div>
-            `;
+        html += `
+            <div class="tarjeta-clima">
+                <strong>${ciudad.nombre}</strong><br>
+                ${icono}<br>
+                🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
+                🌧️ Probabilidad de lluvia: ${lluvia}%
+            </div>
+        `;
 
         } catch (e) {
             html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
         }
     }
 
-    div.innerHTML = html;
+    div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
+
 });
 
 
