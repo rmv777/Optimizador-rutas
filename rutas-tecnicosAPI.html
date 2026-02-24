@@ -234,7 +234,6 @@ async function pintarListaYMapa(datos) {
     const geocoder = new google.maps.Geocoder();
     const service = new google.maps.DistanceMatrixService();
 
-    // Helper: envolver DistanceMatrix en una Promesa
     function calcularTramo(origen, destino) {
         return new Promise((resolve, reject) => {
             service.getDistanceMatrix(
@@ -245,13 +244,9 @@ async function pintarListaYMapa(datos) {
                     unitSystem: google.maps.UnitSystem.METRIC,
                 },
                 (response, status) => {
-                    if (status !== "OK") {
-                        return reject(status);
-                    }
+                    if (status !== "OK") return reject(status);
                     const el = response.rows[0].elements[0];
-                    if (el.status !== "OK") {
-                        return reject(el.status);
-                    }
+                    if (el.status !== "OK") return reject(el.status);
                     resolve({
                         distanciaTexto: el.distance.text,
                         distanciaValor: el.distance.value,
@@ -263,55 +258,12 @@ async function pintarListaYMapa(datos) {
         });
     }
 
-    // Construimos la secuencia de paradas: [Valencina, d1, d2, ..., dN, Valencina]
+    // Construimos paradas: ORIGEN_FIJO + direcciones + ORIGEN_FIJO
     const paradas = [ORIGEN_FIJO, ...datos.map(d => d.direccion), ORIGEN_FIJO];
 
-    let totalDistancia = 0; // metros
-    let totalDuracion = 0;  // segundos
+    let totalDistancia = 0;
+    let totalDuracion = 0;
 
-    // Geocodificación para dibujar ruta
-    const coordenadasRuta = [];
-
-    // Geocodificar todas las direcciones (sin Valencina aún)
-    await Promise.all(
-        datos.map((item, idx) => {
-            return new Promise((resolve) => {
-                geocoder.geocode({ address: item.direccion }, (results, status) => {
-                    if (status === "OK" && results[0]) {
-                        const pos = results[0].geometry.location;
-                        coordenadasRuta[idx] = pos;
-
-                        const marker = new google.maps.Marker({
-                            map,
-                            position: pos,
-                            label: String(idx + 1),
-                            title: item.direccion,
-                        });
-
-                        markers.push(marker);
-                        bounds.extend(pos);
-                        map.fitBounds(bounds);
-                    }
-                    resolve();
-                });
-            });
-        })
-    );
-
-    // Geocodificar Valencina para ruta completa
-    await new Promise((resolve) => {
-        geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
-            if (status === "OK" && results[0]) {
-                const origen = results[0].geometry.location;
-                coordenadasRuta.unshift(origen);
-                coordenadasRuta.push(origen);
-                dibujarRutaCompleta(coordenadasRuta);
-            }
-            resolve();
-        });
-    });
-
-    // Ahora calculamos tramo a tramo y pintamos la lista
     for (let i = 1; i < paradas.length - 1; i++) {
         const origen = paradas[i - 1];
         const destino = paradas[i];
@@ -321,18 +273,17 @@ async function pintarListaYMapa(datos) {
         totalDistancia += infoTramo.distanciaValor;
         totalDuracion += infoTramo.duracionValor;
 
-        // Pintar cada dirección (solo para las reales, no Valencina)
         if (i < paradas.length - 1) {
-           const item = datos[i - 1];
+            const item = datos[i - 1];
             const li = document.createElement("li");
-            
-            // ← ESTA ES LA LÍNEA QUE DEBES AÑADIR
+
+            // Necesario para Sortable
             li.dataset.id = i - 1;
-            
+
             let html = `
                 <strong>${i}.</strong>
-                <input type="text" class="direccion-editable" value="${item.direccion}" data-index="${i - 1}" style="width: 70%; margin-bottom: 5px;">
-                <button class="btn-eliminar" data-index="${i - 1}" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+                <input type="text" class="direccion-editable" value="${item.direccion}" style="width: 70%; margin-bottom: 5px;">
+                <button class="btn-eliminar" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
                     X
                 </button>
                 <br>
@@ -346,7 +297,6 @@ async function pintarListaYMapa(datos) {
 
             li.innerHTML = html;
             lista.appendChild(li);
-
         }
     }
 
@@ -377,7 +327,57 @@ async function pintarListaYMapa(datos) {
     liTotal.style.border = "2px solid #b2d8b2";
 
     lista.appendChild(liTotal);
+
+    // -----------------------------
+    // GEOCODIFICACIÓN Y MAPA
+    // -----------------------------
+
+    const coordenadasRuta = [];
+    const bounds = new google.maps.LatLngBounds();
+
+    // Geocodificar direcciones
+    await Promise.all(
+        datos.map((item, idx) => {
+            return new Promise((resolve) => {
+                geocoder.geocode({ address: item.direccion }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const pos = results[0].geometry.location;
+                        coordenadasRuta[idx] = pos;
+
+                        const marker = new google.maps.Marker({
+                            map,
+                            position: pos,
+                            label: String(idx + 1),
+                            title: item.direccion,
+                        });
+
+                        markers.push(marker);
+                        bounds.extend(pos);
+                    }
+                    resolve();
+                });
+            });
+        })
+    );
+
+    // Geocodificar Valencina
+    await new Promise((resolve) => {
+        geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const origen = results[0].geometry.location;
+                coordenadasRuta.unshift(origen);
+                coordenadasRuta.push(origen);
+                bounds.extend(origen);
+                dibujarRutaCompleta(coordenadasRuta);
+            }
+            resolve();
+        });
+    });
+
+    map.fitBounds(bounds);
 }
+
+    // Recalcular
     document.getElementById("btn-recalcular").addEventListener("click", () => {
     // Leer todas las direcciones editadas
     const inputs = document.querySelectorAll(".direccion-editable");
@@ -392,7 +392,7 @@ async function pintarListaYMapa(datos) {
     // Volver a calcular distancias desde Valencina
     calcularDistanciasDesdeValencina(nuevasDirecciones);
 });
-
+    // Exportar
     document.getElementById("btn-exportar").addEventListener("click", () => {
     const inputs = document.querySelectorAll(".direccion-editable");
 
