@@ -70,23 +70,24 @@ button:hover {
     100% { opacity: 1; }
 }
 
-    #clima-contenedor {
+#clima-contenedor {
     display: flex;
-    flex-wrap: wrap; /* Para que salten de línea si no caben */
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 15px;
-    margin-top: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
 }
 
-#clima-contenedor .tarjeta-clima {
-    flex: 1;
-    min-width: 180px; /* Evita que se hagan demasiado pequeñas */
-    max-width: 220px;
-    padding: 10px;
+.tarjeta-clima {
+    flex: 0 0 auto;
+    width: 180px;
+    padding: 12px;
     border: 1px solid #ccc;
     border-radius: 8px;
     background: #f9f9f9;
+    text-align: center;
 }
-
 
 </style>
 </head>
