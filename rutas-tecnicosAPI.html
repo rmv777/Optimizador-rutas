@@ -93,8 +93,6 @@ button:hover {
     <div id="map"></div>
 
 </div>
-<!-- ARRASTRAR Y SOLTAR -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
     
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
@@ -163,6 +161,7 @@ async function procesarImagenOCR(event) {
         mostrarMensaje("Error procesando la imagen", "advertencia");
     }
 }
+
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
     const service = new google.maps.DistanceMatrixService();
@@ -440,17 +439,18 @@ document.addEventListener("click", (e) => {
     }
 });
 
-    // --- ACTIVAR DRAG & DROP ---
+
+</script>
+        <!-- ARRASTRAR Y SOLTAR -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
+    
+       // --- ACTIVAR DRAG & DROP ---
     new Sortable(document.getElementById("lista-direcciones"), {
         animation: 150,
         onEnd: function () {
         console.log("Nuevo orden manual aplicado");
     }
 });
-
-
-</script>
-    
 </body>
 </html>
 
