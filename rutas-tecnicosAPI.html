@@ -338,15 +338,12 @@ async function pintarListaYMapa(datos) {
                 <br>
             `;
 
-
-
             if (i === 1) {
                 html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
             } else {
                 html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
             }
-            const li = document.createElement("li");
-            li.dataset.id = i - 1;
+
             li.innerHTML = html;
             lista.appendChild(li);
 
