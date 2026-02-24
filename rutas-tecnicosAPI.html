@@ -90,8 +90,6 @@
     background: #117a8b;
 }
 
-    
-
 /* --- ESTILO GLOBAL --- */
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
@@ -202,6 +200,18 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </header>
 
 <div class="contenedor-principal">
+        <div class="tarjeta">
+            <h2>🌦️ Previsión del tiempo</h2>
+        
+            <label for="fecha-clima" style="font-weight:600;">Seleccionar día:</label><br>
+            <input type="date" id="fecha-clima" style="margin-top:8px;">
+        
+            <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-top:12px;">
+                📅 Ver previsión
+            </button>
+        
+            <div id="resultado-clima" style="margin-top:15px;"></div>
+        </div>
 
     <div class="tarjeta">
         <h2>📸 OCR — Cargar direcciones desde imagen</h2>
