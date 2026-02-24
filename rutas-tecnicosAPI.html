@@ -7,6 +7,60 @@
 
 <style>
 
+    /* Botones principales de acciones */
+.botones-acciones {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.boton-accion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0078ff;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: 0.2s;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+.boton-accion:hover {
+    background: #005fcc;
+    transform: translateY(-2px);
+}
+
+/* Colores diferenciados */
+.boton-anadir {
+    background: #28a745;
+}
+.boton-anadir:hover {
+    background: #1e7e34;
+}
+
+.boton-recalcular {
+    background: #ffc107;
+    color: #333;
+}
+.boton-recalcular:hover {
+    background: #e0a800;
+}
+
+.boton-exportar {
+    background: #17a2b8;
+}
+.boton-exportar:hover {
+    background: #117a8b;
+}
+
+    
+
 /* --- ESTILO GLOBAL --- */
 body {
     font-family: 'Segoe UI', Arial, sans-serif;
@@ -206,14 +260,18 @@ button:hover {
         <div id="ocr-loading" style="display:none; margin-top:10px;">⏳ Procesando imagen...</div>
     </div>
 
-    <div class="tarjeta">
-        <h2>📝 Lista de direcciones</h2>
-        <button id="btn-anadir">Añadir dirección</button>
-        <button id="btn-recalcular">Recalcular ruta</button>
-        <button id="btn-exportar">Exportar</button>
+<div class="tarjeta">
+    <h2>📝 Lista de direcciones</h2>
 
-        <ul id="lista-direcciones"></ul>
+    <div class="botones-acciones">
+        <button id="btn-anadir" class="boton-accion boton-anadir">➕ Añadir dirección</button>
+        <button id="btn-recalcular" class="boton-accion boton-recalcular">🔄 Recalcular ruta</button>
+        <button id="btn-exportar" class="boton-accion boton-exportar">📤 Exportar a Google Maps</button>
     </div>
+
+    <ul id="lista-direcciones"></ul>
+</div>
+
 
     <div class="tarjeta">
         <h2>🗺️ Mapa de la ruta</h2>
