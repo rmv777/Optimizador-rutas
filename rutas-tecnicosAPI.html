@@ -81,6 +81,14 @@ button:hover {
 
     <button onclick="document.getElementById('inputImagen').click()">Cargar imagen (OCR)</button>
     <input type="file" id="inputImagen" accept="image/*" style="display:none" onchange="procesarImagenOCR(event)">
+   
+    <h3>Seleccionar día para previsión del tiempo</h3>
+
+    <input type="date" id="fecha-clima" style="padding:8px; font-size:16px;">
+    <button id="btn-clima" style="margin-left:10px;">Ver previsión</button>
+    
+    <div id="resultado-clima" style="margin-top:15px;"></div>
+
     
     <div id="mensaje"></div>
     <div id="ocr-loading" style="
@@ -479,6 +487,55 @@ document.addEventListener("click", (e) => {
             li.remove();
         }
     }
+});
+
+    // --- PREVISIÓN DEL TIEMPO ---
+document.getElementById("btn-clima").addEventListener("click", async () => {
+    const fecha = document.getElementById("fecha-clima").value;
+    const div = document.getElementById("resultado-clima");
+
+    if (!fecha) {
+        div.innerHTML = "<div style='color:red;'>Selecciona una fecha.</div>";
+        return;
+    }
+
+    div.innerHTML = "⏳ Consultando previsión del tiempo...";
+
+    // Coordenadas de las ciudades
+    const ciudades = [
+        { nombre: "Sevilla", lat: 37.3891, lon: -5.9845 },
+        { nombre: "Cádiz", lat: 36.5271, lon: -6.2886 },
+        { nombre: "Huelva", lat: 37.2614, lon: -6.9447 },
+        { nombre: "Córdoba", lat: 37.8882, lon: -4.7794 },
+        { nombre: "Málaga", lat: 36.7213, lon: -4.4214 }
+    ];
+
+    let html = `<h3>Previsión para el ${fecha}</h3>`;
+
+    for (const ciudad of ciudades) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${ciudad.lat}&longitude=${ciudad.lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe/Madrid&start_date=${fecha}&end_date=${fecha}`;
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+
+            const tmax = data.daily.temperature_2m_max[0];
+            const tmin = data.daily.temperature_2m_min[0];
+            const lluvia = data.daily.precipitation_probability_max[0];
+
+            html += `
+                <div style="padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:5px;">
+                    <strong>${ciudad.nombre}</strong><br>
+                    🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
+                    🌧️ Probabilidad de lluvia: ${lluvia}%
+                </div>
+            `;
+        } catch (e) {
+            html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
+        }
+    }
+
+    div.innerHTML = html;
 });
 
 
