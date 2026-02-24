@@ -63,6 +63,13 @@ button:hover {
 .info { background: #d9edf7; }
 .exito { background: #dff0d8; }
 .advertencia { background: #f2dede; }
+
+@keyframes parpadeo {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
 </style>
 </head>
 
@@ -74,8 +81,21 @@ button:hover {
 
     <button onclick="document.getElementById('inputImagen').click()">Cargar imagen (OCR)</button>
     <input type="file" id="inputImagen" accept="image/*" style="display:none" onchange="procesarImagenOCR(event)">
-
+    
     <div id="mensaje"></div>
+    <div id="ocr-loading" style="
+    display:none;
+    margin-top:10px;
+    padding:10px;
+    background:#fff3cd;
+    border:1px solid #ffeeba;
+    color:#856404;
+    font-weight:bold;
+    border-radius:5px;
+    animation: parpadeo 1s infinite;
+    ">
+        ⏳ Procesando imagen con OCR...
+    </div>
 
     <h3>Direcciones ordenadas por distancia a Valencina de la Concepción (de más lejos a más cerca)</h3>
     <div id="lista-direcciones"></div>
@@ -130,6 +150,9 @@ async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
 
+    // Mostrar indicador de carga
+    document.getElementById("ocr-loading").style.display = "block";
+
     mostrarMensaje("Procesando imagen con OCR...", "info");
 
     try {
@@ -138,6 +161,9 @@ async function procesarImagenOCR(event) {
             'spa',
             { logger: m => console.log(m) }
         );
+
+        // Ocultar indicador
+        document.getElementById("ocr-loading").style.display = "none";
 
         const texto = resultado.data.text;
 
@@ -152,15 +178,18 @@ async function procesarImagenOCR(event) {
         }
 
         calcularDistanciasDesdeValencina(
-        lineas.map(d => ({ direccion: d }))
-    );
-
+            lineas.map(d => ({ direccion: d }))
+        );
 
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
+
+        // Ocultar indicador si hay error
+        document.getElementById("ocr-loading").style.display = "none";
     }
 }
+
 
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
