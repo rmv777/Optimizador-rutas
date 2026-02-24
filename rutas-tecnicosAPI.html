@@ -218,8 +218,10 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
                     duracionTexto: el.duration.text,
                     distanciaValor: el.distance.value,
                     duracionValor: el.duration.value,
+                    minutos: listaDirecciones[idx].minutos || 60
                 };
             });
+
 
             // ORDENAR (de más lejos a más cerca)
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
@@ -314,6 +316,7 @@ async function pintarListaYMapa(datos) {
                 <button class="btn-eliminar" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
                     X
                 </button>
+                <input type="number" class="tiempo-extra" value="${item.minutos || 60}" min="0" style="width:60px; margin-left:10px;"> min
                 <br>
             `;
 
@@ -338,6 +341,16 @@ async function pintarListaYMapa(datos) {
         <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
     `;
     lista.appendChild(liUltimo);
+
+    // Sumar tiempos extra
+    let totalExtraMin = 0;
+    document.querySelectorAll(".tiempo-extra").forEach(input => {
+        totalExtraMin += parseInt(input.value) || 0;
+    });
+    
+    // Convertir minutos extra a segundos
+    totalDuracion += totalExtraMin * 60;
+
 
     // Totales
     const totalKm = (totalDistancia / 1000).toFixed(2);
@@ -407,19 +420,21 @@ async function pintarListaYMapa(datos) {
 
     // Recalcular
     document.getElementById("btn-recalcular").addEventListener("click", () => {
-    // Leer todas las direcciones editadas
-    const inputs = document.querySelectorAll(".direccion-editable");
-    const nuevasDirecciones = [];
-
-    inputs.forEach(input => {
-        nuevasDirecciones.push({
-            direccion: input.value.trim()
+        const inputsDir = document.querySelectorAll(".direccion-editable");
+        const inputsMin = document.querySelectorAll(".tiempo-extra");
+    
+        const nuevasDirecciones = [];
+    
+        inputsDir.forEach((input, idx) => {
+            nuevasDirecciones.push({
+                direccion: input.value.trim(),
+                minutos: parseInt(inputsMin[idx].value) || 0
+            });
         });
+    
+        calcularDistanciasDesdeValencina(nuevasDirecciones);
     });
 
-    // Volver a calcular distancias desde Valencina
-    calcularDistanciasDesdeValencina(nuevasDirecciones);
-});
     // Exportar
     document.getElementById("btn-exportar").addEventListener("click", () => {
     const inputs = document.querySelectorAll(".direccion-editable");
