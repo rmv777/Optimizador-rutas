@@ -200,18 +200,22 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </header>
 
 <div class="contenedor-principal">
-        <div class="tarjeta">
-            <h2>🌦️ Previsión del tiempo</h2>
+        <div class="tarjeta tarjeta-clima-wrapper">
+
+            <!-- Bloque IZQUIERDA: Fecha + Botón -->
+            <div class="clima-controles">
+                <label for="fecha-clima">Seleccionar día:</label>
+                <input type="date" id="fecha-clima">
         
-            <label for="fecha-clima" style="font-weight:600;">Seleccionar día:</label><br>
-            <input type="date" id="fecha-clima" style="margin-top:8px;">
-        
-            <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-top:12px;">
-                📅 Ver previsión
-            </button>
-        
-            <div id="resultado-clima" style="margin-top:15px;"></div>
-        </div>
+                <button id="btn-clima" class="boton-accion boton-recalcular">
+                    📅 Ver previsión
+                </button>
+    </div>
+
+    <!-- Bloque DERECHA: Tarjetas de clima -->
+    <div id="clima-contenedor" class="clima-resultados"></div>
+
+</div>
 
     <div class="tarjeta">
         <h2>📸 OCR — Cargar direcciones desde imagen</h2>
