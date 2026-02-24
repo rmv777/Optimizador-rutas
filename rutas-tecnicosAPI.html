@@ -7,6 +7,20 @@
 
 <style>
 
+        /* Animación del reloj de arena */
+    @keyframes girarArena {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .reloj-animado {
+        display: inline-block;
+        animation: girarArena 1s infinite linear;
+        font-size: 22px;
+    }
+
+
     /* Botones principales de acciones */
 .botones-acciones {
     display: flex;
@@ -257,7 +271,10 @@ button:hover {
     <div class="tarjeta">
         <h2>📸 OCR — Cargar direcciones desde imagen</h2>
         <input type="file" id="inputImagen" accept="image/*" onchange="procesarImagenOCR(event)">
-        <div id="ocr-loading" style="display:none; margin-top:10px;">⏳ Procesando imagen...</div>
+       <div id="ocr-loading" style="display:none; margin-top:10px;">
+    <span class="reloj-animado">⏳</span> Procesando imagen...
+</div>
+
     </div>
 
 <div class="tarjeta">
