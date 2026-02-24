@@ -153,8 +153,6 @@ async function procesarImagenOCR(event) {
     // Mostrar indicador de carga
     document.getElementById("ocr-loading").style.display = "block";
 
-    mostrarMensaje("Procesando imagen con OCR...", "info");
-
     try {
         const resultado = await Tesseract.recognize(
             archivo,
