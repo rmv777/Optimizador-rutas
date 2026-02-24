@@ -1,181 +1,225 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Optimizador de Rutas DANKESOL</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Optimizador de Rutas DANKESOL</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <style>
-        /* --- ESTILO GLOBAL NUEVO --- */
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #eef1f5;
-            margin: 0;
-            padding: 20px;
-        }
+<style>
 
-        /* Contenedor principal */
-        .contenedor-principal {
-            max-width: 1100px;
-            margin: auto;
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
+/* --- ESTILO GLOBAL --- */
+body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #eef1f5;
+    margin: 0;
+    padding: 20px;
+}
 
-        /* Secciones tipo tarjeta */
-        .tarjeta {
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 14px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+/* Contenedor principal */
+.contenedor-principal {
+    max-width: 1100px;
+    margin: auto;
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
 
-        /* Títulos */
-        h2, h3 {
-            color: #2c3e50;
-            margin-bottom: 12px;
-        }
+/* Títulos */
+h2, h3 {
+    color: #2c3e50;
+    margin-bottom: 12px;
+}
 
-        /* Botones */
-        button {
-            background: #0078ff;
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 15px;
-            transition: 0.2s;
-            margin: 5px 5px 5px 0;
-        }
+/* Secciones tipo tarjeta */
+.tarjeta {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
 
-        button:hover {
-            background: #005fcc;
-        }
+/* Botones */
+button {
+    background: #0078ff;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: 0.2s;
+}
 
-        /* Inputs */
-        input[type="text"],
-        input[type="number"],
-        input[type="date"],
-        input[type="file"] {
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 15px;
-            margin-top: 5px;
-        }
+button:hover {
+    background: #005fcc;
+}
 
-        /* Lista de direcciones */
-        #lista-direcciones li {
-            background: #f9f9f9;
-            padding: 14px;
-            margin-bottom: 12px;
-            border-radius: 10px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            list-style: none;
-        }
+/* Inputs */
+input[type="text"], input[type="number"], input[type="date"], input[type="file"] {
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    margin-top: 5px;
+}
 
-        #lista-direcciones span.dist {
-            font-size: 12px;
-            color: #555;
-        }
+/* Lista de direcciones */
+#lista-direcciones li {
+    background: #f9f9f9;
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
 
-        /* Botón X */
-        .btn-eliminar {
-            background: #ff4d4d !important;
-        }
+/* Botón X */
+.btn-eliminar {
+    background: #ff4d4d !important;
+}
 
-        /* Mapa */
-        #map {
-            width: 100%;
-            height: 400px;
-            border-radius: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin-top: 15px;
-        }
+/* Mapa */
+#map {
+    width: 100%;
+    height: 400px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-top: 15px;
+}
 
-        /* Mensajes */
-        .mensaje {
-            padding: 10px;
-            margin-top: 10px;
-            border-radius: 5px;
-        }
-        .info { background: #d9edf7; }
-        .exito { background: #dff0d8; }
-        .advertencia { background: #f2dede; }
+/* Tarjetas del clima */
+#clima-contenedor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 15px;
+}
 
-        /* Parpadeo OCR */
-        @keyframes parpadeo {
-            0% { opacity: 1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 1; }
-        }
+.tarjeta-clima {
+    flex: 1;
+    min-width: 180px;
+    max-width: 220px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    text-align: center;
+    font-size: 15px;
+}
+// ------------------------------
 
-        #ocr-loading {
-            display: none;
-            margin-top: 10px;
-            padding: 10px;
-            background: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            font-weight: bold;
-            border-radius: 5px;
-            animation: parpadeo 1s infinite;
-        }
+    
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+}
+header {
+    background: #0078ff;
+    color: white;
+    padding: 15px;
+    text-align: center;
+    font-size: 22px;
+}
+.container {
+    padding: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #fff;
+}
+button {
+    padding: 10px 15px;
+    background: #0078ff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    margin: 5px 0;
+}
+button:hover {
+    background: #005fcc;
+}
+#lista-direcciones li {
+    background: #fafafa;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+    list-style: none;
+    border: 1px solid #ddd;
+}
+#lista-direcciones span.dist {
+    font-size: 12px;
+    color: #555;
+}
+#map {
+    width: 100%;
+    height: 450px;
+    margin-top: 20px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+}
+.mensaje {
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+.info { background: #d9edf7; }
+.exito { background: #dff0d8; }
+.advertencia { background: #f2dede; }
 
-        /* Tarjetas del clima */
-        #clima-contenedor {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 18px;
-            margin-top: 15px;
-        }
+@keyframes parpadeo {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
 
-        .tarjeta-clima {
-            flex: 1;
-            min-width: 180px;
-            max-width: 220px;
-            padding: 14px;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            text-align: center;
-            font-size: 15px;
-        }
-    </style>
+#clima-contenedor {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.tarjeta-clima {
+    flex: 0 0 auto;
+    width: 180px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background: #f9f9f9;
+    text-align: center;
+}
+
+</style>
 </head>
+
 <body>
 
 <div class="contenedor-principal">
 
-    <!-- OCR -->
     <div class="tarjeta">
         <h2>📸 OCR — Cargar direcciones desde imagen</h2>
-        <input type="file" id="inputImagen" accept="image/*" onchange="procesarImagenOCR(event)">
-        <div id="ocr-loading">⏳ Procesando imagen con OCR...</div>
-        <div id="mensaje"></div>
+        <input type="file" id="input-ocr">
+        <div id="ocr-loading" style="display:none; margin-top:10px;">⏳ Procesando imagen...</div>
     </div>
 
-    <!-- Lista de direcciones -->
     <div class="tarjeta">
         <h2>📝 Lista de direcciones</h2>
         <button id="btn-anadir">Añadir dirección</button>
         <button id="btn-recalcular">Recalcular ruta</button>
-        <button id="btn-exportar">Exportar ruta a Google Maps</button>
+        <button id="btn-exportar">Exportar</button>
 
         <ul id="lista-direcciones"></ul>
     </div>
 
-    <!-- Mapa -->
     <div class="tarjeta">
         <h2>🗺️ Mapa de la ruta</h2>
         <div id="map"></div>
     </div>
 
-    <!-- Clima -->
     <div class="tarjeta">
         <h2>🌦️ Previsión del tiempo</h2>
         <input type="date" id="fecha-clima">
@@ -185,404 +229,506 @@
 
 </div>
 
+
+
+
+
+<header>Optimizador de Rutas DANKESOL</header>
+
+<div class="container">
+
+    <button onclick="document.getElementById('inputImagen').click()">Cargar imagen (OCR)</button>
+    <input type="file" id="inputImagen" accept="image/*" style="display:none" onchange="procesarImagenOCR(event)">
+   
+    <h3>Seleccionar día para previsión del tiempo</h3>
+
+    <input type="date" id="fecha-clima" style="padding:8px; font-size:16px;">
+    <button id="btn-clima" style="margin-left:10px;">Ver previsión</button>
+    
+    <div id="resultado-clima" style="margin-top:15px;"></div>
+
+    
+    <div id="mensaje"></div>
+    <div id="ocr-loading" style="
+    display:none;
+    margin-top:10px;
+    padding:10px;
+    background:#fff3cd;
+    border:1px solid #ffeeba;
+    color:#856404;
+    font-weight:bold;
+    border-radius:5px;
+    animation: parpadeo 1s infinite;
+    ">
+        ⏳ Procesando imagen con OCR...
+    </div>
+
+    <h3>Direcciones ordenadas por distancia a Valencina de la Concepción (de más lejos a más cerca)</h3>
+    <div id="lista-direcciones"></div>
+    <button id="btn-recalcular">Recalcular ruta</button>
+    <button id="btn-exportar">Exportar ruta a Google Maps</button>
+    <button id="btn-anadir" style="margin-top: 10px; padding: 10px; font-size: 16px;">
+    Añadir dirección
+    </button>
+    
+    <h3>Mapa</h3>
+    <div id="map"></div>
+
+</div>
+    
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
+
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
-    const ORIGEN_FIJO = "Valencina de la Concepción, Sevilla, España";
-    let map;
-    let bounds;
-    let markers = [];
-    let rutaPolyline = null;
+const ORIGEN_FIJO = "Valencina de la Concepción, Sevilla, España";
+let map;
+let bounds;
+let markers = [];
 
-    // Iconos del tiempo
-    function iconoClima(code) {
-        if (code === 0) return "☀️ Despejado";
-        if (code === 1) return "🌤️ Mayormente despejado";
-        if (code === 2) return "⛅ Parcialmente nublado";
-        if (code === 3) return "☁️ Nublado";
-        if (code === 45 || code === 48) return "🌫️ Niebla";
-        if ([51,53,55].includes(code)) return "🌦️ Llovizna";
-        if ([61,63,65].includes(code)) return "🌧️ Lluvia";
-        if ([66,67].includes(code)) return "🌨️ Lluvia helada";
-        if ([71,73,75].includes(code)) return "❄️ Nieve";
-        if (code === 95) return "⛈️ Tormenta";
-        if (code === 96 || code === 99) return "🌩️ Tormenta fuerte";
-        return "❓";
+let rutaPolyline = null;
+
+function iconoClima(code) {
+    if (code === 0) return "☀️ Despejado";
+    if (code === 1) return "🌤️ Mayormente despejado";
+    if (code === 2) return "⛅ Parcialmente nublado";
+    if (code === 3) return "☁️ Nublado";
+    if (code === 45 || code === 48) return "🌫️ Niebla";
+    if ([51,53,55].includes(code)) return "🌦️ Llovizna";
+    if ([61,63,65].includes(code)) return "🌧️ Lluvia";
+    if ([66,67].includes(code)) return "🌨️ Lluvia helada";
+    if ([71,73,75].includes(code)) return "❄️ Nieve";
+    if (code === 95) return "⛈️ Tormenta";
+    if (code === 96 || code === 99) return "🌩️ Tormenta fuerte";
+    return "❓";
+}
+
+function mostrarMensaje(texto, tipo) {
+    const div = document.getElementById("mensaje");
+    div.className = "mensaje " + tipo;
+    div.textContent = texto;
+}
+
+function initMap() {
+    map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 37.417, lng: -6.072 },
+        zoom: 10
+    });
+
+    bounds = new google.maps.LatLngBounds();
+}
+
+window.onload = initMap;
+
+async function procesarImagenOCR(event) {
+    const archivo = event.target.files[0];
+    if (!archivo) return;
+
+    // Mostrar indicador de carga
+    document.getElementById("ocr-loading").style.display = "block";
+
+    try {
+        const resultado = await Tesseract.recognize(
+            archivo,
+            'spa',
+            { logger: m => console.log(m) }
+        );
+
+        // Ocultar indicador
+        document.getElementById("ocr-loading").style.display = "none";
+
+        const texto = resultado.data.text;
+
+        const lineas = texto
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+
+        if (lineas.length === 0) {
+            mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
+            return;
+        }
+
+        calcularDistanciasDesdeValencina(
+            lineas.map(d => ({ direccion: d }))
+        );
+
+    } catch (error) {
+        console.error("Error OCR:", error);
+        mostrarMensaje("Error procesando la imagen", "advertencia");
+
+        // Ocultar indicador si hay error
+        document.getElementById("ocr-loading").style.display = "none";
     }
+}
 
-    function mostrarMensaje(texto, tipo) {
-        const div = document.getElementById("mensaje");
-        div.className = "mensaje " + tipo;
-        div.textContent = texto;
-    }
 
-    function initMap() {
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: { lat: 37.417, lng: -6.072 },
-            zoom: 10
-        });
-        bounds = new google.maps.LatLngBounds();
-    }
-    window.onload = initMap;
 
-    async function procesarImagenOCR(event) {
-        const archivo = event.target.files[0];
-        if (!archivo) return;
+function calcularDistanciasDesdeValencina(listaDirecciones) {
+    const service = new google.maps.DistanceMatrixService();
 
-        document.getElementById("ocr-loading").style.display = "block";
+    // Usamos SOLO las direcciones que vienen del parámetro
+    const destinos = listaDirecciones.map(d => d.direccion);
 
-        try {
-            const resultado = await Tesseract.recognize(
-                archivo,
-                'spa',
-                { logger: m => console.log(m) }
-            );
-
-            document.getElementById("ocr-loading").style.display = "none";
-
-            const texto = resultado.data.text;
-            const lineas = texto
-                .split("\n")
-                .map(l => l.trim())
-                .filter(l => l.length > 0);
-
-            if (lineas.length === 0) {
-                mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
+    service.getDistanceMatrix(
+        {
+            origins: [ORIGEN_FIJO],
+            destinations: destinos,
+            travelMode: google.maps.TravelMode.DRIVING,
+            unitSystem: google.maps.UnitSystem.METRIC,
+        },
+        (response, status) => {
+            if (status !== "OK") {
+                mostrarMensaje("Error calculando distancias: " + status, "advertencia");
                 return;
             }
 
-            calcularDistanciasDesdeValencina(
-                lineas.map(d => ({ direccion: d }))
-            );
+            // Construimos el array con distancias
+            const datos = destinos.map((dir, idx) => {
+                const el = response.rows[0].elements[idx];
+                return {
+                    direccion: dir,
+                    distanciaTexto: el.distance.text,
+                    duracionTexto: el.duration.text,
+                    distanciaValor: el.distance.value,
+                    duracionValor: el.duration.value,
+                    minutos: listaDirecciones[idx].minutos || 60
+                };
+            });
 
-        } catch (error) {
-            console.error("Error OCR:", error);
-            mostrarMensaje("Error procesando la imagen", "advertencia");
-            document.getElementById("ocr-loading").style.display = "none";
+
+            // ORDENAR (de más lejos a más cerca)
+            datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
+
+            // Pintar lista y mapa con el nuevo orden
+            pintarListaYMapa(datos);
         }
+    );
+}
+
+function limpiarMarcadores() {
+    markers.forEach(m => m.setMap(null));
+    markers = [];
+    bounds = new google.maps.LatLngBounds();
+}
+
+function dibujarRutaCompleta(puntos) {
+    // Si ya existe una ruta dibujada, la eliminamos
+    if (rutaPolyline) {
+        rutaPolyline.setMap(null);
     }
 
-    function calcularDistanciasDesdeValencina(listaDirecciones) {
-        const service = new google.maps.DistanceMatrixService();
-        const destinos = listaDirecciones.map(d => d.direccion);
+    rutaPolyline = new google.maps.Polyline({
+        path: puntos,
+        geodesic: true,
+        strokeColor: "#0078ff",
+        strokeOpacity: 0.9,
+        strokeWeight: 5,
+    });
 
-        service.getDistanceMatrix(
-            {
-                origins: [ORIGEN_FIJO],
-                destinations: destinos,
-                travelMode: google.maps.TravelMode.DRIVING,
-                unitSystem: google.maps.UnitSystem.METRIC,
-            },
-            (response, status) => {
-                if (status !== "OK") {
-                    mostrarMensaje("Error calculando distancias: " + status, "advertencia");
-                    return;
-                }
+    rutaPolyline.setMap(map);
+}
 
-                const datos = destinos.map((dir, idx) => {
-                    const el = response.rows[0].elements[idx];
-                    return {
-                        direccion: dir,
+
+async function pintarListaYMapa(datos) {
+    const lista = document.getElementById("lista-direcciones");
+    lista.innerHTML = "";
+    limpiarMarcadores();
+
+    const geocoder = new google.maps.Geocoder();
+    const service = new google.maps.DistanceMatrixService();
+
+    function calcularTramo(origen, destino) {
+        return new Promise((resolve, reject) => {
+            service.getDistanceMatrix(
+                {
+                    origins: [origen],
+                    destinations: [destino],
+                    travelMode: google.maps.TravelMode.DRIVING,
+                    unitSystem: google.maps.UnitSystem.METRIC,
+                },
+                (response, status) => {
+                    if (status !== "OK") return reject(status);
+                    const el = response.rows[0].elements[0];
+                    if (el.status !== "OK") return reject(el.status);
+                    resolve({
                         distanciaTexto: el.distance.text,
-                        duracionTexto: el.duration.text,
                         distanciaValor: el.distance.value,
+                        duracionTexto: el.duration.text,
                         duracionValor: el.duration.value,
-                        minutos: listaDirecciones[idx].minutos || 60
-                    };
-                });
-
-                datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
-                pintarListaYMapa(datos);
-            }
-        );
-    }
-
-    function limpiarMarcadores() {
-        markers.forEach(m => m.setMap(null));
-        markers = [];
-        bounds = new google.maps.LatLngBounds();
-    }
-
-    function dibujarRutaCompleta(puntos) {
-        if (rutaPolyline) {
-            rutaPolyline.setMap(null);
-        }
-        rutaPolyline = new google.maps.Polyline({
-            path: puntos,
-            geodesic: true,
-            strokeColor: "#0078ff",
-            strokeOpacity: 0.9,
-            strokeWeight: 5,
-        });
-        rutaPolyline.setMap(map);
-    }
-
-    async function pintarListaYMapa(datos) {
-        const lista = document.getElementById("lista-direcciones");
-        lista.innerHTML = "";
-        limpiarMarcadores();
-
-        const geocoder = new google.maps.Geocoder();
-        const service = new google.maps.DistanceMatrixService();
-
-        function calcularTramo(origen, destino) {
-            return new Promise((resolve, reject) => {
-                service.getDistanceMatrix(
-                    {
-                        origins: [origen],
-                        destinations: [destino],
-                        travelMode: google.maps.TravelMode.DRIVING,
-                        unitSystem: google.maps.UnitSystem.METRIC,
-                    },
-                    (response, status) => {
-                        if (status !== "OK") return reject(status);
-                        const el = response.rows[0].elements[0];
-                        if (el.status !== "OK") return reject(el.status);
-                        resolve({
-                            distanciaTexto: el.distance.text,
-                            distanciaValor: el.distance.value,
-                            duracionTexto: el.duration.text,
-                            duracionValor: el.duration.value,
-                        });
-                    }
-                );
-            });
-        }
-
-        const paradas = [ORIGEN_FIJO, ...datos.map(d => d.direccion), ORIGEN_FIJO];
-        let totalDistancia = 0;
-        let totalDuracion = 0;
-
-        for (let i = 1; i < paradas.length - 1; i++) {
-            const origen = paradas[i - 1];
-            const destino = paradas[i];
-            const infoTramo = await calcularTramo(origen, destino);
-
-            totalDistancia += infoTramo.distanciaValor;
-            totalDuracion += infoTramo.duracionValor;
-
-            if (i < paradas.length - 1) {
-                const item = datos[i - 1];
-                const li = document.createElement("li");
-                li.dataset.id = i - 1;
-
-                let html = `
-                    <strong>${i}.</strong>
-                    <input type="text" class="direccion-editable" value="${item.direccion}"
-                           style="width: 70%; margin-bottom: 5px;">
-                    <button class="btn-eliminar"
-                            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-                        X
-                    </button>
-                    <input type="number" class="tiempo-extra" value="${item.minutos || 60}" min="0"
-                           style="width:60px; margin-left:10px;"> min
-                    <br>
-                `;
-
-                if (i === 1) {
-                    html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
-                } else {
-                    html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
-                }
-
-                li.innerHTML = html;
-                lista.appendChild(li);
-            }
-        }
-
-        const infoUltimo = await calcularTramo(paradas[paradas.length - 2], paradas[paradas.length - 1]);
-        totalDistancia += infoUltimo.distanciaValor;
-        totalDuracion += infoUltimo.duracionValor;
-
-        const liUltimo = document.createElement("li");
-        liUltimo.innerHTML = `
-            <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
-        `;
-        lista.appendChild(liUltimo);
-
-        let totalExtraMin = 0;
-        document.querySelectorAll(".tiempo-extra").forEach(input => {
-            totalExtraMin += parseInt(input.value) || 0;
-        });
-        totalDuracion += totalExtraMin * 60;
-
-        const totalKm = (totalDistancia / 1000).toFixed(2);
-        const horas = Math.floor(totalDuracion / 3600);
-        const minutos = Math.floor((totalDuracion % 3600) / 60);
-
-        const liTotal = document.createElement("li");
-        liTotal.innerHTML = `
-            <strong>Total Km:</strong> ${totalKm} km<br>
-            <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
-        `;
-        liTotal.style.background = "#dff0d8";
-        liTotal.style.padding = "10px";
-        liTotal.style.marginTop = "10px";
-        liTotal.style.border = "2px solid #b2d8b2";
-        lista.appendChild(liTotal);
-
-        const coordenadasRuta = [];
-        const boundsLocal = new google.maps.LatLngBounds();
-
-        await Promise.all(
-            datos.map((item, idx) => {
-                return new Promise((resolve) => {
-                    geocoder.geocode({ address: item.direccion }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            const pos = results[0].geometry.location;
-                            coordenadasRuta[idx] = pos;
-                            const marker = new google.maps.Marker({
-                                map,
-                                position: pos,
-                                label: String(idx + 1),
-                                title: item.direccion,
-                            });
-                            markers.push(marker);
-                            boundsLocal.extend(pos);
-                        }
-                        resolve();
                     });
-                });
-            })
-        );
-
-        await new Promise((resolve) => {
-            geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
-                if (status === "OK" && results[0]) {
-                    const origen = results[0].geometry.location;
-                    coordenadasRuta.unshift(origen);
-                    coordenadasRuta.push(origen);
-                    boundsLocal.extend(origen);
-                    dibujarRutaCompleta(coordenadasRuta);
                 }
-                resolve();
-            });
+            );
         });
-
-        map.fitBounds(boundsLocal);
     }
+
+    // Construimos paradas: ORIGEN_FIJO + direcciones + ORIGEN_FIJO
+    const paradas = [ORIGEN_FIJO, ...datos.map(d => d.direccion), ORIGEN_FIJO];
+
+    let totalDistancia = 0;
+    let totalDuracion = 0;
+
+    for (let i = 1; i < paradas.length - 1; i++) {
+        const origen = paradas[i - 1];
+        const destino = paradas[i];
+
+        const infoTramo = await calcularTramo(origen, destino);
+
+        totalDistancia += infoTramo.distanciaValor;
+        totalDuracion += infoTramo.duracionValor;
+
+        if (i < paradas.length - 1) {
+            const item = datos[i - 1];
+            const li = document.createElement("li");
+
+            // Necesario para Sortable
+            li.dataset.id = i - 1;
+
+            let html = `
+                <strong>${i}.</strong>
+                <input type="text" class="direccion-editable" value="${item.direccion}" style="width: 70%; margin-bottom: 5px;">
+                <button class="btn-eliminar" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+                    X
+                </button>
+                <input type="number" class="tiempo-extra" value="${item.minutos || 60}" min="0" style="width:60px; margin-left:10px;"> min
+                <br>
+            `;
+
+            if (i === 1) {
+                html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
+            } else {
+                html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
+            }
+
+            li.innerHTML = html;
+            lista.appendChild(li);
+        }
+    }
+
+    // Último tramo: última dirección → Valencina
+    const infoUltimo = await calcularTramo(paradas[paradas.length - 2], paradas[paradas.length - 1]);
+    totalDistancia += infoUltimo.distanciaValor;
+    totalDuracion += infoUltimo.duracionValor;
+
+    const liUltimo = document.createElement("li");
+    liUltimo.innerHTML = `
+        <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
+    `;
+    lista.appendChild(liUltimo);
+
+    // Sumar tiempos extra
+    let totalExtraMin = 0;
+    document.querySelectorAll(".tiempo-extra").forEach(input => {
+        totalExtraMin += parseInt(input.value) || 0;
+    });
+    
+    // Convertir minutos extra a segundos
+    totalDuracion += totalExtraMin * 60;
+
+
+    // Totales
+    const totalKm = (totalDistancia / 1000).toFixed(2);
+    const horas = Math.floor(totalDuracion / 3600);
+    const minutos = Math.floor((totalDuracion % 3600) / 60);
+
+    const liTotal = document.createElement("li");
+    liTotal.innerHTML = `
+        <strong>Total Km:</strong> ${totalKm} km<br>
+        <strong>Total Tiempo:</strong> ${horas} h ${minutos} min
+    `;
+    liTotal.style.background = "#dff0d8";
+    liTotal.style.padding = "10px";
+    liTotal.style.marginTop = "10px";
+    liTotal.style.border = "2px solid #b2d8b2";
+
+    lista.appendChild(liTotal);
+
+    // -----------------------------
+    // GEOCODIFICACIÓN Y MAPA
+    // -----------------------------
+
+    const coordenadasRuta = [];
+    const bounds = new google.maps.LatLngBounds();
+
+    // Geocodificar direcciones
+    await Promise.all(
+        datos.map((item, idx) => {
+            return new Promise((resolve) => {
+                geocoder.geocode({ address: item.direccion }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const pos = results[0].geometry.location;
+                        coordenadasRuta[idx] = pos;
+
+                        const marker = new google.maps.Marker({
+                            map,
+                            position: pos,
+                            label: String(idx + 1),
+                            title: item.direccion,
+                        });
+
+                        markers.push(marker);
+                        bounds.extend(pos);
+                    }
+                    resolve();
+                });
+            });
+        })
+    );
+
+    // Geocodificar Valencina
+    await new Promise((resolve) => {
+        geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const origen = results[0].geometry.location;
+                coordenadasRuta.unshift(origen);
+                coordenadasRuta.push(origen);
+                bounds.extend(origen);
+                dibujarRutaCompleta(coordenadasRuta);
+            }
+            resolve();
+        });
+    });
+
+    map.fitBounds(bounds);
+}
 
     // Recalcular
     document.getElementById("btn-recalcular").addEventListener("click", () => {
         const inputsDir = document.querySelectorAll(".direccion-editable");
         const inputsMin = document.querySelectorAll(".tiempo-extra");
-
+    
         const nuevasDirecciones = [];
-
+    
         inputsDir.forEach((input, idx) => {
             nuevasDirecciones.push({
                 direccion: input.value.trim(),
                 minutos: parseInt(inputsMin[idx].value) || 0
             });
         });
-
+    
         calcularDistanciasDesdeValencina(nuevasDirecciones);
     });
 
     // Exportar
     document.getElementById("btn-exportar").addEventListener("click", () => {
-        const inputs = document.querySelectorAll(".direccion-editable");
-        const direcciones = Array.from(inputs).map(input => input.value.trim());
+    const inputs = document.querySelectorAll(".direccion-editable");
 
-        if (direcciones.length === 0) {
-            mostrarMensaje("No hay direcciones para exportar", "advertencia");
-            return;
+    // Leer direcciones en el orden actual
+    const direcciones = Array.from(inputs).map(input => input.value.trim());
+
+    if (direcciones.length === 0) {
+        mostrarMensaje("No hay direcciones para exportar", "advertencia");
+        return;
+    }
+
+    // Construir URL de Google Maps
+    const origen = encodeURIComponent(ORIGEN_FIJO);
+    const waypoints = direcciones.map(d => encodeURIComponent(d)).join("/");
+
+    const url = `https://www.google.com/maps/dir/${origen}/${waypoints}/${origen}`;
+
+    // Abrir en nueva pestaña
+    window.open(url, "_blank");
+});
+
+    // --- BOTÓN AÑADIR DIRECCIÓN ---
+document.getElementById("btn-anadir").addEventListener("click", () => {
+    const lista = document.getElementById("lista-direcciones");
+
+    const nuevoLi = document.createElement("li");
+    nuevoLi.innerHTML = `
+        <strong>+</strong>
+        <input type="text" class="direccion-editable" value="" placeholder="Nueva dirección..." style="width: 90%; margin-bottom: 5px;"><br>
+    `;
+
+    lista.appendChild(nuevoLi);
+});
+
+
+// --- ELIMINAR DIRECCIÓN INDIVIDUAL ---
+document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-eliminar")) {
+        const li = e.target.closest("li");
+        if (li) {
+            li.remove();
         }
+    }
+});
 
-        const origen = encodeURIComponent(ORIGEN_FIJO);
-        const waypoints = direcciones.map(d => encodeURIComponent(d)).join("/");
-        const url = `https://www.google.com/maps/dir/${origen}/${waypoints}/${origen}`;
+    // --- PREVISIÓN DEL TIEMPO ---
+document.getElementById("btn-clima").addEventListener("click", async () => {
+    const fecha = document.getElementById("fecha-clima").value;
+    const div = document.getElementById("resultado-clima");
 
-        window.open(url, "_blank");
-    });
+    if (!fecha) {
+        div.innerHTML = "<div style='color:red;'>Selecciona una fecha.</div>";
+        return;
+    }
 
-    // Añadir dirección
-    document.getElementById("btn-anadir").addEventListener("click", () => {
-        const lista = document.getElementById("lista-direcciones");
-        const nuevoLi = document.createElement("li");
-        nuevoLi.innerHTML = `
-            <strong>+</strong>
-            <input type="text" class="direccion-editable" value="" placeholder="Nueva dirección..."
-                   style="width: 90%; margin-bottom: 5px;"><br>
+    div.innerHTML = "⏳ Consultando previsión del tiempo...";
+
+    // Coordenadas de las ciudades
+    const ciudades = [
+        { nombre: "Sevilla", lat: 37.3891, lon: -5.9845 },
+        { nombre: "Cádiz", lat: 36.5271, lon: -6.2886 },
+        { nombre: "Huelva", lat: 37.2614, lon: -6.9447 },
+        { nombre: "Córdoba", lat: 37.8882, lon: -4.7794 },
+        { nombre: "Málaga", lat: 36.7213, lon: -4.4214 }
+    ];
+
+    let html = `<h3>Previsión para el ${fecha}</h3>`;
+
+    for (const ciudad of ciudades) {
+       const url = `https://api.open-meteo.com/v1/forecast?latitude=${ciudad.lat}&longitude=${ciudad.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe/Madrid&start_date=${fecha}&end_date=${fecha}`;
+
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+
+            const code = data.daily.weathercode[0];
+            const icono = iconoClima(code);
+
+            const tmax = data.daily.temperature_2m_max[0];
+            const tmin = data.daily.temperature_2m_min[0];
+            const lluvia = data.daily.precipitation_probability_max[0];
+
+        html += `
+            <div class="tarjeta-clima">
+                <strong>${ciudad.nombre}</strong><br>
+                ${icono}<br>
+                🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
+                🌧️ Probabilidad de lluvia: ${lluvia}%
+            </div>
         `;
-        lista.appendChild(nuevoLi);
-    });
 
-    // Eliminar dirección individual
-    document.addEventListener("click", (e) => {
-        if (e.target.classList.contains("btn-eliminar")) {
-            const li = e.target.closest("li");
-            if (li) {
-                li.remove();
-            }
+        } catch (e) {
+            html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
         }
-    });
+    }
 
-    // Previsión del tiempo
-    document.getElementById("btn-clima").addEventListener("click", async () => {
-        const fecha = document.getElementById("fecha-clima").value;
-        const div = document.getElementById("resultado-clima");
+    div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
 
-        if (!fecha) {
-            div.innerHTML = "<div style='color:red;'>Selecciona una fecha.</div>";
-            return;
-        }
+});
 
-        div.innerHTML = "⏳ Consultando previsión del tiempo...";
 
-        const ciudades = [
-            { nombre: "Sevilla", lat: 37.3891, lon: -5.9845 },
-            { nombre: "Cádiz", lat: 36.5271, lon: -6.2886 },
-            { nombre: "Huelva", lat: 37.2614, lon: -6.9447 },
-            { nombre: "Córdoba", lat: 37.8882, lon: -4.7794 },
-            { nombre: "Málaga", lat: 36.7213, lon: -4.4214 }
-        ];
 
-        let html = `<h3>Previsión para el ${fecha}</h3>`;
-
-        for (const ciudad of ciudades) {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${ciudad.lat}&longitude=${ciudad.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe/Madrid&start_date=${fecha}&end_date=${fecha}`;
-
-            try {
-                const resp = await fetch(url);
-                const data = await resp.json();
-
-                const code = data.daily.weathercode[0];
-                const icono = iconoClima(code);
-                const tmax = data.daily.temperature_2m_max[0];
-                const tmin = data.daily.temperature_2m_min[0];
-                const lluvia = data.daily.precipitation_probability_max[0];
-
-                html += `
-                    <div class="tarjeta-clima">
-                        <strong>${ciudad.nombre}</strong><br>
-                        ${icono}<br>
-                        🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
-                        🌧️ Probabilidad de lluvia: ${lluvia}%
-                    </div>
-                `;
-            } catch (e) {
-                html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
-            }
-        }
-
-        div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
-    });
 </script>
+        <!-- ARRASTRAR Y SOLTAR -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
 
-<!-- ARRASTRAR Y SOLTAR -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-    new Sortable(document.getElementById("lista-direcciones"), {
-        animation: 150,
-        onEnd: function () {
-            console.log("Nuevo orden manual aplicado");
-        }
-    });
+new Sortable(document.getElementById("lista-direcciones"), {
+    animation: 150,
+    onEnd: function () {
+        console.log("Nuevo orden manual aplicado");
+    }
+});
 </script>
+ 
+</div>
 
 </body>
 </html>
