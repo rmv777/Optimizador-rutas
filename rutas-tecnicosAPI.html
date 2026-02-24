@@ -323,17 +323,21 @@ async function pintarListaYMapa(datos) {
 
         // Pintar cada dirección (solo para las reales, no Valencina)
         if (i < paradas.length - 1) {
-            const item = datos[i - 1];
+           const item = datos[i - 1];
             const li = document.createElement("li");
+            
+            // ← ESTA ES LA LÍNEA QUE DEBES AÑADIR
+            li.dataset.id = i - 1;
+            
+            let html = `
+                <strong>${i}.</strong>
+                <input type="text" class="direccion-editable" value="${item.direccion}" data-index="${i - 1}" style="width: 70%; margin-bottom: 5px;">
+                <button class="btn-eliminar" data-index="${i - 1}" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+                    X
+                </button>
+                <br>
+            `;
 
-        let html = `
-            <strong>${i}.</strong>
-            <input type="text" class="direccion-editable" value="${item.direccion}" data-index="${i - 1}" style="width: 70%; margin-bottom: 5px;">
-            <button class="btn-eliminar" data-index="${i - 1}" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-                X
-            </button>
-            <br>
-        `;
 
 
             if (i === 1) {
