@@ -443,14 +443,17 @@ document.addEventListener("click", (e) => {
 </script>
         <!-- ARRASTRAR Y SOLTAR -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
-    
-       // --- ACTIVAR DRAG & DROP ---
-    new Sortable(document.getElementById("lista-direcciones"), {
-        animation: 150,
-        onEnd: function () {
+
+<script>
+new Sortable(document.getElementById("lista-direcciones"), {
+    animation: 150,
+    onEnd: function () {
         console.log("Nuevo orden manual aplicado");
     }
 });
+</script>
+ 
+
 </body>
 </html>
 
