@@ -444,8 +444,24 @@ async function pintarListaYMapa(datos) {
         });
     }
 
-    // Construimos paradas: ORIGEN_FIJO + direcciones + ORIGEN_FIJO
-    const paradas = [ORIGEN_FIJO, ...datos.map(d => d.direccion), ORIGEN_FIJO];
+// Detectar paradas de comida en la lista real
+const elementosLista = Array.from(document.querySelectorAll("#lista-direcciones li"));
+
+const paradasCompletas = [ORIGEN_FIJO];
+
+elementosLista.forEach(li => {
+    if (li.classList.contains("item-parada")) {
+        // Parada de comida → no tiene dirección, pero suma 1h
+        paradasCompletas.push("PARADA_COMIDA");
+    } else {
+        // Dirección normal
+        const dir = li.querySelector(".direccion-editable").value.trim();
+        paradasCompletas.push(dir);
+    }
+});
+
+paradasCompletas.push(ORIGEN_FIJO);
+
 
     let totalDistancia = 0;
     let totalDuracion = 0;
