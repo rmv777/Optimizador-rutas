@@ -574,22 +574,27 @@ async function pintarListaYMapa(datos) {
     map.fitBounds(bounds);
 }
 
-    // Recalcular
-    document.getElementById("btn-recalcular").addEventListener("click", () => {
-        const inputsDir = document.querySelectorAll(".direccion-editable");
-        const inputsMin = document.querySelectorAll(".tiempo-extra");
-    
-        const nuevasDirecciones = [];
-    
-        inputsDir.forEach((input, idx) => {
+// Recalcular
+document.getElementById("btn-recalcular").addEventListener("click", () => {
+    const inputsDir = document.querySelectorAll(".direccion-editable");
+    const inputsMin = document.querySelectorAll(".tiempo-extra");
+
+    const nuevasDirecciones = [];
+
+    inputsDir.forEach((input, idx) => {
+        // Solo añadimos direcciones normales, NO paradas de comida
+        if (!input.closest("li").classList.contains("item-parada")) {
             nuevasDirecciones.push({
                 direccion: input.value.trim(),
                 minutos: parseInt(inputsMin[idx].value) || 0
             });
-        });
-    
-        calcularDistanciasDesdeValencina(nuevasDirecciones);
+        }
     });
+
+    // Recalcular solo con direcciones reales
+    calcularDistanciasDesdeValencina(nuevasDirecciones);
+});
+
 
     // Exportar
     document.getElementById("btn-exportar").addEventListener("click", () => {
