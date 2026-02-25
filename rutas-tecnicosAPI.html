@@ -444,8 +444,26 @@ async function pintarListaYMapa(datos) {
         });
     }
 
-// Detectar paradas de comida en la lista real
-const elementosLista = Array.from(document.querySelectorAll("#lista-direcciones li"));
+// Si vienen datos nuevos (OCR o recalcular), los usamos
+let elementosLista;
+
+if (datos && datos.length > 0) {
+    // Construir lista combinada: direcciones nuevas + paradas existentes
+    const paradasExistentes = Array.from(document.querySelectorAll("#lista-direcciones li.item-parada"))
+        .map(li => "PARADA_COMIDA");
+
+    elementosLista = [
+        ...datos.map(d => d.direccion),
+        ...paradasExistentes
+    ];
+} else {
+    // Si no vienen datos, usamos lo que haya en la lista
+    elementosLista = Array.from(document.querySelectorAll("#lista-direcciones li")).map(li => {
+        if (li.classList.contains("item-parada")) return "PARADA_COMIDA";
+        return li.querySelector(".direccion-editable").value.trim();
+    });
+}
+
 
 const paradasCompletas = [ORIGEN_FIJO];
 
