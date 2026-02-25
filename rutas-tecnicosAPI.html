@@ -444,104 +444,75 @@ async function pintarListaYMapa(datos) {
         });
     }
 
-        // --- CONSTRUIR LISTA COMPLETA DE PARADAS Y DIRECCIONES ---
+// Detectar paradas de comida en la lista real
+const elementosLista = Array.from(document.querySelectorAll("#lista-direcciones li"));
 
-let paradasCompletas = [ORIGEN_FIJO];
+const paradasCompletas = [ORIGEN_FIJO];
 
-// 1. Si vienen datos nuevos (OCR o recalcular), los usamos
-if (datos && datos.length > 0) {
-
-    // Añadir direcciones nuevas
-    datos.forEach(d => paradasCompletas.push(d.direccion));
-
-    // Añadir paradas de comida existentes en la lista
-    const paradasExistentes = Array.from(document.querySelectorAll("#lista-direcciones li.item-parada"));
-    paradasExistentes.forEach(() => paradasCompletas.push("PARADA_COMIDA"));
-
-} else {
-
-    // 2. Si NO vienen datos, usamos lo que haya en el DOM
-    const elementosLista = Array.from(document.querySelectorAll("#lista-direcciones li"));
-
-    elementosLista.forEach(li => {
-        if (li.classList.contains("item-parada")) {
-            paradasCompletas.push("PARADA_COMIDA");
-        } else {
-            const dir = li.querySelector(".direccion-editable").value.trim();
-            paradasCompletas.push(dir);
-        }
-    });
-}
+elementosLista.forEach(li => {
+    if (li.classList.contains("item-parada")) {
+        // Parada de comida → no tiene dirección, pero suma 1h
+        paradasCompletas.push("PARADA_COMIDA");
+    } else {
+        // Dirección normal
+        const dir = li.querySelector(".direccion-editable").value.trim();
+        paradasCompletas.push(dir);
+    }
+});
 
 paradasCompletas.push(ORIGEN_FIJO);
-
 
 
     let totalDistancia = 0;
     let totalDuracion = 0;
 
-// --- RECORRER TODAS LAS PARADAS Y DIRECCIONES ---
-for (let i = 1; i < paradasCompletas.length - 1; i++) {
+    for (let i = 1; i < paradas.length - 1; i++) {
+        const origen = paradas[i - 1];
+        const destino = paradas[i];
 
-    const origen = paradasCompletas[i - 1];
-    const destino = paradasCompletas[i];
+        const infoTramo = await calcularTramo(origen, destino);
 
-    // --- CASO 1: DESTINO ES PARADA DE COMIDA ---
-    if (destino === "PARADA_COMIDA") {
+        totalDistancia += infoTramo.distanciaValor;
+        totalDuracion += infoTramo.duracionValor;
 
-        totalDuracion += 3600; // 1 hora
+        if (i < paradas.length - 1) {
+            const item = datos[i - 1];
+            const li = document.createElement("li");
 
-        const li = document.createElement("li");
-        li.classList.add("item-parada");
-        li.innerHTML = `
-            <strong>⏱️ Parada de comida — 1 hora</strong>
-        `;
-        lista.appendChild(li);
+            // Necesario para Sortable
+            li.dataset.id = i - 1;
 
-        continue;
+            let html = `
+                <strong>${i}.</strong>
+                <input type="text" class="direccion-editable" value="${item.direccion}" style="width: 70%; margin-bottom: 5px;">
+                <button class="btn-eliminar" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+                    X
+                </button>
+                <input type="number" class="tiempo-extra" value="${item.minutos || 60}" min="0" style="width:60px; margin-left:10px;"> min
+                <br>
+            `;
+
+            if (i === 1) {
+                html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
+            } else {
+                html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
+            }
+
+            li.innerHTML = html;
+            lista.appendChild(li);
+        }
     }
 
-    // --- CASO 2: ORIGEN ES PARADA DE COMIDA ---
-    const origenReal = origen === "PARADA_COMIDA"
-        ? paradasCompletas[i - 2]   // Saltamos la parada
-        : origen;
+    // Último tramo: última dirección → Valencina
+    const infoUltimo = await calcularTramo(paradas[paradas.length - 2], paradas[paradas.length - 1]);
+    totalDistancia += infoUltimo.distanciaValor;
+    totalDuracion += infoUltimo.duracionValor;
 
-    // --- CALCULAR TRAMO ---
-    const infoTramo = await calcularTramo(origenReal, destino);
-
-    totalDistancia += infoTramo.distanciaValor;
-    totalDuracion += infoTramo.duracionValor;
-
-    // --- PINTAR DIRECCIÓN NORMAL ---
-    const li = document.createElement("li");
-    li.innerHTML = `
-        <strong>${i}.</strong>
-        <input type="text" class="direccion-editable" value="${destino}" style="width: 70%; margin-bottom: 5px;">
-        <button class="btn-eliminar" style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-            X
-        </button>
-        <input type="number" class="tiempo-extra" value="0" min="0" style="width:60px; margin-left:10px;"> min
-        <br>
-        <span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>
+    const liUltimo = document.createElement("li");
+    liUltimo.innerHTML = `
+        <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
     `;
-    lista.appendChild(li);
-}
-
-// --- ÚLTIMO TRAMO: vuelta a Valencina ---
-const infoUltimo = await calcularTramo(
-    paradasCompletas[paradasCompletas.length - 2],
-    paradasCompletas[paradasCompletas.length - 1]
-);
-
-totalDistancia += infoUltimo.distanciaValor;
-totalDuracion += infoUltimo.duracionValor;
-
-const liUltimo = document.createElement("li");
-liUltimo.innerHTML = `
-    <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
-`;
-lista.appendChild(liUltimo);
-
+    lista.appendChild(liUltimo);
 
     // Sumar tiempos extra
     let totalExtraMin = 0;
