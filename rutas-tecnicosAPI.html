@@ -67,6 +67,20 @@
     transform: translateY(-2px);
 }
 
+.boton-parada {
+    background: #ff7f27;
+}
+.boton-parada:hover {
+    background: #e66d1f;
+}
+
+.item-parada {
+    background: #ffe5cc !important;
+    border-left: 5px solid #ff7f27;
+    font-weight: bold;
+}
+
+
 /* Colores diferenciados */
 .boton-anadir {
     background: #28a745;
@@ -227,6 +241,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
     <div class="botones-acciones">
         <button id="btn-anadir" class="boton-accion boton-anadir">➕ Añadir dirección</button>
+        <button id="btn-parada" class="boton-accion boton-parada">🍽️ Parada de comida (1h)</button>
         <button id="btn-recalcular" class="boton-accion boton-recalcular">🔄 Recalcular ruta</button>
         <button id="btn-exportar" class="boton-accion boton-exportar">📤 Exportar a Google Maps</button>
     </div>
@@ -609,6 +624,22 @@ document.getElementById("btn-anadir").addEventListener("click", () => {
     `;
 
     lista.appendChild(nuevoLi);
+});
+
+        // --- AÑADIR PARADA DE COMIDA ---
+document.getElementById("btn-parada").addEventListener("click", () => {
+    const lista = document.getElementById("lista-direcciones");
+
+    const li = document.createElement("li");
+    li.classList.add("item-parada");
+
+    li.innerHTML = `
+        <strong>⏱️ Parada de comida — 1 hora</strong>
+        <button class="btn-eliminar" style="margin-left: 10px;">X</button>
+        <input type="hidden" class="tiempo-extra" value="60">
+    `;
+
+    lista.appendChild(li);
 });
 
 
