@@ -574,15 +574,24 @@ async function pintarListaYMapa(datos) {
     map.fitBounds(bounds);
 }
 
-// Recalcular
+// --- RE-CALCULAR RUTA (conservando paradas de comida) ---
 document.getElementById("btn-recalcular").addEventListener("click", () => {
+
+    const lista = document.getElementById("lista-direcciones");
+
+    // 1. Guardar las paradas de comida existentes
+    const paradasComida = [];
+    lista.querySelectorAll(".item-parada").forEach(li => {
+        paradasComida.push(li.outerHTML);
+    });
+
+    // 2. Recoger solo direcciones reales
     const inputsDir = document.querySelectorAll(".direccion-editable");
     const inputsMin = document.querySelectorAll(".tiempo-extra");
 
     const nuevasDirecciones = [];
 
     inputsDir.forEach((input, idx) => {
-        // Solo añadimos direcciones normales, NO paradas de comida
         if (!input.closest("li").classList.contains("item-parada")) {
             nuevasDirecciones.push({
                 direccion: input.value.trim(),
@@ -591,9 +600,18 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
         }
     });
 
-    // Recalcular solo con direcciones reales
+    // 3. Recalcular ruta
     calcularDistanciasDesdeValencina(nuevasDirecciones);
+
+    // 4. Volver a insertar las paradas de comida después de pintar la lista
+    setTimeout(() => {
+        const listaNueva = document.getElementById("lista-direcciones");
+        paradasComida.forEach(html => {
+            listaNueva.insertAdjacentHTML("beforeend", html);
+        });
+    }, 500);
 });
+
 
 
     // Exportar
