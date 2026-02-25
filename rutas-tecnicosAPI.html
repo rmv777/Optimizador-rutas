@@ -459,10 +459,11 @@ async function pintarListaYMapa(datos) {
                 </button>
                <input type="number" class="tiempo-extra" value="${item.minutos || 60}" min="0" style="width:60px; margin-left:10px;"> min
 
-                <label style="margin-left:10px;">
-                    <input type="radio" name="comida" class="radio-comida">
-                    Comida aquí
-                </label>
+<label style="margin-left:10px;">
+    <input type="radio" name="comida" class="radio-comida" ${item.comida ? "checked" : ""}>
+    Comida aquí
+</label>
+
 
                 <br>
             `;
@@ -566,37 +567,38 @@ async function pintarListaYMapa(datos) {
 }
 
     // Recalcular
-        document.getElementById("btn-recalcular").addEventListener("click", () => {
-            const items = document.querySelectorAll("#lista-direcciones li");
-        
-            const nuevasDirecciones = [];
-        
-            let indiceComida = -1;
-        
-            items.forEach((li, idx) => {
-                const dirInput = li.querySelector(".direccion-editable");
-                const minInput = li.querySelector(".tiempo-extra");
-                const radio = li.querySelector(".radio-comida");
-        
-                if (!dirInput) return;
-        
-                nuevasDirecciones.push({
-                    direccion: dirInput.value.trim(),
-                    minutos: parseInt(minInput.value) || 0
-                });
-        
-                if (radio && radio.checked) {
-                    indiceComida = idx;
-                }
-            });
-        
-            // Si hay comida marcada → sumar 60 min a la dirección siguiente
-            if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
-                nuevasDirecciones[indiceComida + 1].minutos += 60;
-            }
-        
-            calcularDistanciasDesdeValencina(nuevasDirecciones);
+document.getElementById("btn-recalcular").addEventListener("click", () => {
+    const items = document.querySelectorAll("#lista-direcciones li");
+
+    const nuevasDirecciones = [];
+    let indiceComida = -1;
+
+    items.forEach((li, idx) => {
+        const dirInput = li.querySelector(".direccion-editable");
+        const minInput = li.querySelector(".tiempo-extra");
+        const radio = li.querySelector(".radio-comida");
+
+        if (!dirInput) return;
+
+        nuevasDirecciones.push({
+            direccion: dirInput.value.trim(),
+            minutos: parseInt(minInput.value) || 0,
+            comida: radio && radio.checked ? true : false
         });
+
+        if (radio && radio.checked) {
+            indiceComida = idx;
+        }
+    });
+
+    // Sumar 60 min a la dirección siguiente
+    if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
+        nuevasDirecciones[indiceComida + 1].minutos += 60;
+    }
+
+    calcularDistanciasDesdeValencina(nuevasDirecciones);
+});
+
 
 
     // Exportar
