@@ -574,7 +574,7 @@ async function pintarListaYMapa(datos) {
     map.fitBounds(bounds);
 }
 
-// --- RE-CALCULAR RUTA (conservando paradas de comida) ---
+// --- RE-CALCULAR RUTA (conservando paradas de comida y sumando 1h) ---
 document.getElementById("btn-recalcular").addEventListener("click", () => {
 
     const lista = document.getElementById("lista-direcciones");
@@ -603,14 +603,46 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
     // 3. Recalcular ruta
     calcularDistanciasDesdeValencina(nuevasDirecciones);
 
-    // 4. Volver a insertar las paradas de comida después de pintar la lista
+    // 4. Volver a insertar las paradas de comida ANTES del cálculo final
     setTimeout(() => {
         const listaNueva = document.getElementById("lista-direcciones");
+
         paradasComida.forEach(html => {
             listaNueva.insertAdjacentHTML("beforeend", html);
         });
+
+        // 5. Forzar recálculo del total (solo tiempo extra)
+        let totalExtraMin = 0;
+        document.querySelectorAll(".tiempo-extra").forEach(input => {
+            totalExtraMin += parseInt(input.value) || 0;
+        });
+
+        // Encontrar el bloque final y actualizarlo
+        const liTotal = listaNueva.querySelector("li:last-child");
+        if (liTotal && liTotal.innerHTML.includes("Total Tiempo")) {
+
+            // Extraer los valores actuales
+            const texto = liTotal.innerHTML;
+            const km = texto.match(/Total Km:<\/strong> ([0-9.]+)/)[1];
+
+            // Tiempo actual sin comida
+            const horas = parseInt(texto.match(/([0-9]+) h/)[1]);
+            const minutos = parseInt(texto.match(/h ([0-9]+) min/)[1]);
+
+            let totalMin = horas * 60 + minutos + totalExtraMin;
+
+            const nuevasHoras = Math.floor(totalMin / 60);
+            const nuevosMin = totalMin % 60;
+
+            liTotal.innerHTML = `
+                <strong>Total Km:</strong> ${km} km<br>
+                <strong>Total Tiempo:</strong> ${nuevasHoras} h ${nuevosMin} min
+            `;
+        }
+
     }, 500);
 });
+
 
 
 
