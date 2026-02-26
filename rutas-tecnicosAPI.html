@@ -598,39 +598,44 @@ async function pintarListaYMapa(datos) {
 }
 
     // Recalcular
-document.getElementById("btn-recalcular").addEventListener("click", () => {
-    const items = document.querySelectorAll("#lista-direcciones li");
-
-    const nuevasDirecciones = [];
-    let indiceComida = -1;
-
-    items.forEach((li, idx) => {
-        const dirInput = li.querySelector(".direccion-editable");
-        const minInput = li.querySelector(".tiempo-extra");
-        const radio = li.querySelector(".radio-comida");
-
-        if (!dirInput) return;
-
-        nuevasDirecciones.push({
-            direccion: dirInput.value.trim(),
-            minutos: parseInt(minInput.value) || 0,
-            comida: radio ? (radio.dataset.waschecked === "true") : false,
-            comidaExtra: 0
+        document.getElementById("btn-recalcular").addEventListener("click", () => {
+            const items = document.querySelectorAll("#lista-direcciones li");
+        
+            const nuevasDirecciones = [];
+            let indiceComida = -1;
+        
+            items.forEach((li, idx) => {
+                const dirInput = li.querySelector(".direccion-editable");
+                const minInput = li.querySelector(".tiempo-extra");
+                const radio = li.querySelector(".radio-comida");
+        
+                if (!dirInput) return;
+        
+                nuevasDirecciones.push({
+                    direccion: dirInput.value.trim(),
+                    minutos: parseInt(minInput.value) || 0,
+                    comida: radio ? (radio.dataset.waschecked === "true") : false,
+                    comidaExtra: 0
+                });
+        
+                // ✔ CORRECTO: leer el estado REAL del radio
+                if (radio && radio.dataset.waschecked === "true") {
+                    indiceComida = idx;
+                }
+            });
+        
+            // Resetear comidaExtra en todas
+            nuevasDirecciones.forEach(d => d.comidaExtra = 0);
+        
+            // Si hay comida marcada, asignar 60 min a la dirección siguiente
+            if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
+                nuevasDirecciones[indiceComida + 1].comidaExtra = 60;
+            }
+        
+            // Llamar al cálculo con la lista ya corregida
+            calcularDistanciasDesdeValencina(nuevasDirecciones);
         });
 
-
-        if (radio && radio.checked) {
-            indiceComida = idx;
-        }
-    });
-
-    // Sumar 60 min a la dirección siguiente
-    if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
-        nuevasDirecciones[indiceComida + 1].comidaExtra = 60; //solo marcar, no sumar
-    }
-
-    calcularDistanciasDesdeValencina(nuevasDirecciones);
-});
 
 
 
