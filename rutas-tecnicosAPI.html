@@ -488,11 +488,12 @@ async function pintarListaYMapa(datos) {
                            style="width:60px; margin-left:10px;"> min
                 
                     <label style="margin-left:10px;">
-                        <input type="radio" 
-                               name="comida" 
+                        <input type="radio"
+                               name="comida"
                                class="radio-comida"
-                               data-checked="${item.comida ? "true" : "false"}"
-                               ${item.comida ? "checked" : ""}>
+                               data-checked="${item.comidaChecked ? "true" : "false"}"
+                               ${item.comidaChecked ? "checked" : ""}>
+
                         Comida aquí
                     </label>
                 
@@ -615,7 +616,9 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
         nuevasDirecciones.push({
             direccion: dirInput.value.trim(),
             minutos: parseInt(minInput.value) || 0,
-            comida: radio && radio.checked ? true : false
+            comida: radio && radio.checked ? true : false,
+            comidaChecked: radio.dataset.checked === "true"
+
         });
 
         if (radio && radio.checked) {
@@ -750,19 +753,25 @@ new Sortable(document.getElementById("lista-direcciones"), {
 });
 </script>
         
- document.addEventListener("click", function(e) {
-    if (e.target.classList.contains("radio-comida")) {
-        // Si ya estaba marcado → desmarcarlo
-        if (e.target.dataset.checked === "true") {
-            e.target.checked = false;
-            e.target.dataset.checked = "false";
-        } else {
-            // Marcar este y desmarcar los demás
-            document.querySelectorAll(".radio-comida").forEach(r => r.dataset.checked = "false");
-            e.target.dataset.checked = "true";
-        }
-    }
-});
+        document.addEventListener("click", function(e) {
+            if (e.target.classList.contains("radio-comida")) {
+        
+                // Si ya estaba marcado → desmarcarlo
+                if (e.target.dataset.checked === "true") {
+                    e.target.checked = false;
+                    e.target.dataset.checked = "false";
+                    return;
+                }
+        
+                // Si no estaba marcado → marcar este y desmarcar los demás
+                document.querySelectorAll(".radio-comida").forEach(r => {
+                    r.dataset.checked = "false";
+                });
+        
+                e.target.dataset.checked = "true";
+            }
+        });
+
 
 </div>
 
