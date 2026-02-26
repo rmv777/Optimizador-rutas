@@ -493,10 +493,8 @@ async function pintarListaYMapa(datos) {
                                class="radio-comida"
                                data-checked="${item.comidaChecked ? "true" : "false"}"
                                ${item.comidaChecked ? "checked" : ""}>
-
-                        Comida aquí
-                    </label>
-                
+                        1h Comida 
+                    </label>                
                     <br>
                 `;
 
@@ -617,8 +615,8 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
             direccion: dirInput.value.trim(),
             minutos: parseInt(minInput.value) || 0,
             comida: radio && radio.checked ? true : false,
-            comidaChecked: radio.dataset.checked === "true"
-
+            comidaChecked: radio ? (radio.dataset.checked === "true") : false,
+            comidaExtra: 0
         });
 
         if (radio && radio.checked) {
