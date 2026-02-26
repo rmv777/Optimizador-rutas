@@ -441,8 +441,18 @@ async function pintarListaYMapa(datos) {
 
         const infoTramo = await calcularTramo(origen, destino);
 
+        // --- SUMAR MINUTOS EXTRA (incluye comida si se marcó) ---
+        const minutosExtra = datos[i - 1].minutos || 0;
+        infoTramo.duracionValor += minutosExtra * 60;
+        
+        // Actualizar texto de duración
+        const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
+        infoTramo.duracionTexto = `${duracionTotalMin} min`;
+        
+        // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
         totalDuracion += infoTramo.duracionValor;
+
 
         if (i < paradas.length - 1) {
             const item = datos[i - 1];
