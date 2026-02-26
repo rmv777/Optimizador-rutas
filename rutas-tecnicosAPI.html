@@ -487,14 +487,14 @@ async function pintarListaYMapa(datos) {
                            min="0" 
                            style="width:60px; margin-left:10px;"> min
                 
-                    <label style="margin-left:10px;">
-                        <input type="radio"
-                               name="comida"
-                               class="radio-comida"
-                               data-checked="${item.comidaChecked ? "true" : "false"}"
-                               ${item.comidaChecked ? "checked" : ""}>
-                        1h Comida 
-                    </label>                
+                <label style="margin-left:10px;">
+                    <input type="radio"
+                           name="comida"
+                           class="radio-comida"
+                           data-waschecked="${item.comida ? "true" : "false"}"
+                           ${item.comida ? "checked" : ""}>
+                    Comida aquí
+                </label>
                     <br>
                 `;
 
@@ -614,10 +614,10 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
         nuevasDirecciones.push({
             direccion: dirInput.value.trim(),
             minutos: parseInt(minInput.value) || 0,
-            comida: radio && radio.checked ? true : false,
-            comidaChecked: radio ? (radio.dataset.checked === "true") : false,
+            comida: radio ? (radio.dataset.waschecked === "true") : false,
             comidaExtra: 0
         });
+
 
         if (radio && radio.checked) {
             indiceComida = idx;
