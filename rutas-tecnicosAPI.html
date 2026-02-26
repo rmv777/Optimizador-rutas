@@ -441,13 +441,19 @@ async function pintarListaYMapa(datos) {
 
         const infoTramo = await calcularTramo(origen, destino);
 
-        // --- SUMAR MINUTOS EXTRA (incluye comida si se marcó) ---
+         // Minutos extra reales del técnico
         const minutosExtra = datos[i - 1].minutos || 0;
-        infoTramo.duracionValor += minutosExtra * 60;
         
-        // Actualizar texto de duración
+        // Minutos de comida si vienen marcados
+        const comidaExtra = datos[i - 1].comidaExtra || 0;
+        
+        // Sumar ambos al tramo
+        infoTramo.duracionValor += (minutosExtra + comidaExtra) * 60;
+        
+        // Actualizar texto
         const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
         infoTramo.duracionTexto = `${duracionTotalMin} min`;
+
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
@@ -603,7 +609,7 @@ document.getElementById("btn-recalcular").addEventListener("click", () => {
 
     // Sumar 60 min a la dirección siguiente
     if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
-        nuevasDirecciones[indiceComida + 1].minutos += 60;
+        nuevasDirecciones[indiceComida + 1].comidaExtra = 60; //solo marcar, no sumar
     }
 
     calcularDistanciasDesdeValencina(nuevasDirecciones);
