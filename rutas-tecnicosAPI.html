@@ -460,7 +460,9 @@ async function pintarListaYMapa(datos) {
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
-        totalDuracion += infoTramo.duracionValor;
+        // duracionTotalMin = minGoogle + minCampo + comidaExtra
+        totalDuracion += duracionTotalMin * 60;
+        
 
 
         if (i < paradas.length - 1) {
@@ -535,7 +537,7 @@ async function pintarListaYMapa(datos) {
     });
     
     // Convertir minutos extra a segundos
-    totalDuracion += totalExtraMin * 60;
+    //totalDuracion += totalExtraMin * 60;
 
 
     // Totales
