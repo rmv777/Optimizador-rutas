@@ -751,26 +751,27 @@ new Sortable(document.getElementById("lista-direcciones"), {
 });
 </script>
         
-<script>        
-        document.addEventListener("click", function(e) {
-            if (e.target.classList.contains("radio-comida")) {
-        
-                // Si ya estaba marcado → desmarcarlo
-                if (e.target.dataset.checked === "true") {
-                    e.target.checked = false;
-                    e.target.dataset.checked = "false";
-                    return;
-                }
-        
-                // Si no estaba marcado → marcar este y desmarcar los demás
-                document.querySelectorAll(".radio-comida").forEach(r => {
-                    r.dataset.checked = "false";
-                });
-        
-                e.target.dataset.checked = "true";
-            }
-        });
+<script>
+document.addEventListener("click", function(e) {
+    if (!e.target.classList.contains("radio-comida")) return;
+
+    const yaMarcado = e.target.checked && e.target.dataset.waschecked === "true";
+
+    // Resetear estado previo de todos
+    document.querySelectorAll(".radio-comida").forEach(r => {
+        r.dataset.waschecked = "false";
+    });
+
+    if (yaMarcado) {
+        e.target.checked = false;
+        e.target.dataset.waschecked = "false";
+    } else {
+        e.target.checked = true;
+        e.target.dataset.waschecked = "true";
+    }
+});
 </script>
+
 
 </div>
 
