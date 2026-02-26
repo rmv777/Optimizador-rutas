@@ -512,8 +512,15 @@ async function pintarListaYMapa(datos) {
 
     // Último tramo: última dirección → Valencina
     const infoUltimo = await calcularTramo(paradas[paradas.length - 2], paradas[paradas.length - 1]);
-    totalDistancia += infoUltimo.distanciaValor;
-    totalDuracion += infoUltimo.duracionValor;
+        // Acumular totales del último tramo
+        totalDistancia += infoUltimo.distanciaValor;
+        
+        // duracionTotalMinUltimo = minGoogle + minCampo + comidaExtra del último tramo
+        const duracionTotalMinUltimo = Math.round(infoUltimo.duracionValor / 60);
+        
+        // Sumar SOLO lo que aparece entre paréntesis
+        totalDuracion += duracionTotalMinUltimo * 60;
+
 
     const liUltimo = document.createElement("li");
     liUltimo.innerHTML = `
