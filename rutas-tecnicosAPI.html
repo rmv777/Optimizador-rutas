@@ -351,17 +351,20 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
             }
 
             // Construimos el array con distancias
-            const datos = destinos.map((dir, idx) => {
-                const el = response.rows[0].elements[idx];
-                return {
-                    direccion: dir,
-                    distanciaTexto: el.distance.text,
-                    duracionTexto: el.duration.text,
-                    distanciaValor: el.distance.value,
-                    duracionValor: el.duration.value,
-                    minutos: listaDirecciones[idx].minutos || 60
-                };
-            });
+                const datos = destinos.map((dir, idx) => {
+                    const el = response.rows[0].elements[idx];
+                    return {
+                        direccion: dir,
+                        distanciaTexto: el.distance.text,
+                        duracionTexto: el.duration.text,
+                        distanciaValor: el.distance.value,
+                        duracionValor: el.duration.value,
+                        minutos: listaDirecciones[idx].minutos || 60,
+                        comidaExtra: listaDirecciones[idx].comidaExtra || 0,
+                        comida: listaDirecciones[idx].comida || false
+                    };
+                });
+
 
 
             // ORDENAR (de más lejos a más cerca)
