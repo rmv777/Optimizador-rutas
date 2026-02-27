@@ -599,36 +599,44 @@ async function pintarListaYMapa(datos) {
         }
     }
 
-    // Último tramo: última dirección → Valencina
-    const infoUltimo = await calcularTramo(paradas[paradas.length - 2], paradas[paradas.length - 1]);
-        // Acumular totales del último tramo
+        // Último tramo: última dirección → Valencina
+        const infoUltimo = await calcularTramo(
+            paradas[paradas.length - 2],
+            paradas[paradas.length - 1]
+        );
+        
+        // Minutos Google del último tramo
+        const minutosGoogleUltimo = Math.round(infoUltimo.duracionValor / 60);
+        
+        // Llegada = salida real acumulada + Google del último tramo
+        const horaLlegadaUltimo = sumarMinutosAHora(
+            salidaSeleccionada,
+            minutosAcumuladosTotales + minutosGoogleUltimo
+        );
+        
+        // Salida = llegada (si no hay extras en el último tramo)
+        const horaSalidaUltimo = horaLlegadaUltimo;
+        
+        // Actualizar acumuladores
+        minutosAcumuladosGoogle += minutosGoogleUltimo;
+        minutosAcumuladosTotales += minutosGoogleUltimo;
+        
+        // Distancia total
         totalDistancia += infoUltimo.distanciaValor;
         
-        // duracionTotalMinUltimo = minGoogle + minCampo + comidaExtra del último tramo
-        const duracionTotalMinUltimo = Math.round(infoUltimo.duracionValor / 60);
-
-        // Hora de llegada a Valencina
-        const horaLlegadaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle);
+        // Texto duración
+        infoUltimo.duracionTexto = formatearHoras(minutosGoogleUltimo);
         
-        // Hora de salida = llegada + duración del último tramo
-        const horaSalidaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle + duracionTotalMinUltimo);
-        minutosAcumuladosTotales += duracionTotalMinUltimo;
-
-
-        // Sumar SOLO lo que aparece entre paréntesis
-        totalDuracion += duracionTotalMinUltimo;
-
-        infoUltimo.duracionTexto = formatearHoras(duracionTotalMinUltimo);
-
-    const liUltimo = document.createElement("li");
+        // Pintar en lista
+        const liUltimo = document.createElement("li");
         liUltimo.innerHTML = `
             <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
             <div style="font-size:12px; color:#444; margin-top:4px;">
                 Llegada: ${horaLlegadaUltimo} — Salida: ${horaSalidaUltimo}
             </div>
         `;
+        lista.appendChild(liUltimo);
 
-    lista.appendChild(liUltimo);
 
     // Sumar tiempos extra
     let totalExtraMin = 0;
