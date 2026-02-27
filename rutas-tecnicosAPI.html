@@ -470,6 +470,10 @@ async function pintarListaYMapa(datos) {
         const salidaSeleccionada = document.querySelector('input[name="horaSalida"]:checked').value;
         let horaActualMin = parseInt(salidaSeleccionada) * 60; // 7*60 o 8*60
 
+        // === HORA DE SALIDA ===
+        const salidaSeleccionada = parseInt(document.querySelector('input[name="horaSalida"]:checked').value);
+        let minutosAcumulados = 0;
+
         
     for (let i = 1; i < paradas.length - 1; i++) {
         const origen = paradas[i - 1];
@@ -504,6 +508,8 @@ async function pintarListaYMapa(datos) {
         // Ahora sí, sumar este tramo al acumulado
         minutosAcumulados += duracionTotalMin;
 
+        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados);
+        infoTramo.horaSalida = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados + duracionTotalMin);
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
