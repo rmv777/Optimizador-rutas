@@ -247,6 +247,10 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <button id="btn-anadir" class="boton-accion boton-anadir">➕ Añadir dirección</button>
         <button id="btn-recalcular" class="boton-accion boton-recalcular">🔄 Recalcular ruta</button>
         <button id="btn-exportar" class="boton-accion boton-exportar">📤 Exportar a Google Maps</button>
+        <button id="btnWhatsappRuta" style="margin-top:15px; background:#25D366; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">
+    Enviar ruta completa por WhatsApp
+</button>
+
     </div>
 
     <ul id="lista-direcciones"></ul>
@@ -926,6 +930,44 @@ document.addEventListener("click", function(e) {
         e.target.dataset.waschecked = "true";
     }
 });
+
+        document.getElementById("btnWhatsappRuta").addEventListener("click", function () {
+
+    // Obtener todas las direcciones en orden
+    const items = document.querySelectorAll("#lista-direcciones li");
+    if (items.length === 0) {
+        alert("No hay direcciones para enviar.");
+        return;
+    }
+
+    let partes = [];
+
+    items.forEach(li => {
+        const input = li.querySelector(".direccion-editable");
+        if (!input) return;
+
+        const direccion = input.value.trim();
+        if (direccion !== "") {
+            partes.push(encodeURIComponent(direccion));
+        }
+    });
+
+    if (partes.length < 2) {
+        alert("Se necesitan al menos dos direcciones para crear una ruta.");
+        return;
+    }
+
+    // MISMO ENLACE QUE EL BOTÓN DE EXPORTAR
+    const urlRuta = "https://www.google.com/maps/dir/" + partes.join("/");
+
+    // Preparar mensaje para WhatsApp
+    const mensaje = "🗺️ Ruta completa del día:\n" + urlRuta;
+
+    // Abrir WhatsApp con el mensaje
+    const urlWhatsapp = "https://wa.me/?text=" + encodeURIComponent(mensaje);
+    window.open(urlWhatsapp, "_blank");
+});
+
 </script>
 
 
