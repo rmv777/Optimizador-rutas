@@ -222,6 +222,18 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
     </div>
 
+        <div style="margin:10px 0;">
+    <label>
+        <input type="radio" name="horaSalida" value="7" checked>
+        Salida 7:00
+    </label>
+    <label style="margin-left:20px;">
+        <input type="radio" name="horaSalida" value="8">
+        Salida 8:00
+    </label>
+</div>
+
+
 <div class="tarjeta">
     <h2>📝 Lista de direcciones ordenadas de mas léjos a mas cerca de Valencina</h2>
 
@@ -247,6 +259,14 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
+<script>
+        function sumarMinutosAHora(horaBase, minutosASumar) {
+    const totalMin = horaBase * 60 + minutosASumar;
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    return `${h}:${m.toString().padStart(2, '0')}`;
+}
+</script>
         
 <script>
 
@@ -446,6 +466,11 @@ async function pintarListaYMapa(datos) {
     let totalDistancia = 0;
     let totalDuracion = 0;
 
+        // Obtener hora de salida seleccionada
+        const salidaSeleccionada = document.querySelector('input[name="horaSalida"]:checked').value;
+        let horaActualMin = parseInt(salidaSeleccionada) * 60; // 7*60 o 8*60
+
+        
     for (let i = 1; i < paradas.length - 1; i++) {
         const origen = paradas[i - 1];
         const destino = paradas[i];
@@ -463,7 +488,22 @@ async function pintarListaYMapa(datos) {
         
         // Actualizar texto en formato h:mm
         const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
+            
+            // Calcular hora de llegada
+        const horaLlegada = sumarMinutosAHora(parseInt(salidaSeleccionada), infoTramo.minutosAcumulados);
+        
+        // Calcular hora de salida (llegada + permanencia)
+        const permanencia = duracionTotalMin; 
+        const horaSalida = sumarMinutosAHora(parseInt(salidaSeleccionada), infoTramo.minutosAcumulados + permanencia);
+
         infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
+
+        // Guardar minutos acumulados ANTES de sumar este tramo
+        infoTramo.minutosAcumulados = minutosAcumulados;
+        
+        // Ahora sí, sumar este tramo al acumulado
+        minutosAcumulados += duracionTotalMin;
+
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
