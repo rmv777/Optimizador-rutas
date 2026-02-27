@@ -503,17 +503,18 @@ async function pintarListaYMapa(datos) {
         // Duración total del tramo (Google + extras)
         const duracionTotalMin = minutosGoogle + minutosExtra + comidaExtra;
         
-        // LLEGADA: salida + (todo lo anterior, con extras) + Google de este tramo
+        // Llegada = salida real acumulada + minutos Google del tramo
         infoTramo.horaLlegada = sumarMinutosAHora(
             salidaSeleccionada,
             minutosAcumuladosTotales + minutosGoogle
         );
         
-        // SALIDA: llegada + extras de este tramo
+        // Salida = llegada + extras
         infoTramo.horaSalida = sumarMinutosAHora(
             salidaSeleccionada,
             minutosAcumuladosTotales + minutosGoogle + minutosExtra + comidaExtra
         );
+
         
         // Guardar minutos acumulados para mostrar en el <li> (hasta llegada)
         infoTramo.minutosAcumulados = minutosAcumuladosTotales + minutosGoogle;
