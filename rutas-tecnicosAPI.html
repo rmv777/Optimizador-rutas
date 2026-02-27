@@ -490,36 +490,38 @@ async function pintarListaYMapa(datos) {
         const destino = paradas[i];
 
         const infoTramo = await calcularTramo(origen, destino);
-
-         // Minutos extra reales del técnico
+        
+        // Minutos Google (solo ruta)
+        const minutosGoogle = Math.round(infoTramo.duracionValor / 60);
+        
+        // Minutos extra reales del técnico
         const minutosExtra = datos[i - 1].minutos ?? 0;
         
         // Minutos de comida si vienen marcados
         const comidaExtra = datos[i - 1].comidaExtra || 0;
         
-        const minutosGoogle = Math.round(infoTramo.duracionValor / 60);  // Google puro
+        // Duración total del tramo (Google + extras)
         const duracionTotalMin = minutosGoogle + minutosExtra + comidaExtra;
         
-            
-        // Llegada = salida + minutos Google del tramo
+        // LLEGADA = salida + Google acumulado + Google del tramo
         infoTramo.horaLlegada = sumarMinutosAHora(
             salidaSeleccionada,
             minutosAcumuladosGoogle + minutosGoogle
         );
-
         
-        // Salida = llegada + duración total (Google + extras)
+        // SALIDA = llegada + extras
         infoTramo.horaSalida = sumarMinutosAHora(
             salidaSeleccionada,
-            minutosAcumuladosGoogle + duracionTotalMin
+            minutosAcumuladosGoogle + minutosGoogle + minutosExtra + comidaExtra
         );
         
         // Guardar minutos acumulados para mostrar en el <li>
-        infoTramo.minutosAcumulados = minutosAcumuladosGoogle;
+        infoTramo.minutosAcumulados = minutosAcumuladosGoogle + minutosGoogle;
         
         // Actualizar acumuladores
-        minutosAcumuladosGoogle += minutosGoogle;
-        minutosAcumuladosTotales += duracionTotalMin;
+        minutosAcumuladosGoogle += minutosGoogle;        // solo Google
+        minutosAcumuladosTotales += duracionTotalMin;    // Google + extras
+
 
 
         infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
