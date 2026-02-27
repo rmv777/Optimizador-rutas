@@ -359,7 +359,7 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
                         duracionTexto: el.duration.text,
                         distanciaValor: el.distance.value,
                         duracionValor: el.duration.value,
-                        minutos: listaDirecciones[idx].minutos || 60,
+                        minutos: listaDirecciones[idx].minutos ?? 60,
                         comidaExtra: listaDirecciones[idx].comidaExtra || 0,
                         comida: listaDirecciones[idx].comida || false
                     };
