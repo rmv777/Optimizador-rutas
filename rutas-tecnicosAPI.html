@@ -247,7 +247,15 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
+        
 <script>
+
+function formatearHoras(minutosTotales) {
+    const horas = Math.floor(minutosTotales / 60);
+    const minutos = minutosTotales % 60;
+    return `${horas}:${minutos.toString().padStart(2, '0')}`;
+}
+
 const ORIGEN_FIJO = "Valencina de la Concepción, Sevilla, España";
 let map;
 let bounds;
@@ -453,10 +461,9 @@ async function pintarListaYMapa(datos) {
         // Sumar ambos al tramo
         infoTramo.duracionValor += (minutosExtra + comidaExtra) * 60;
         
-        // Actualizar texto
+        // Actualizar texto en formato h:mm
         const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
-        infoTramo.duracionTexto = `${duracionTotalMin} min`;
-
+        infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
