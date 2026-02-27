@@ -471,8 +471,9 @@ async function pintarListaYMapa(datos) {
         let horaActualMin = parseInt(salidaSeleccionada) * 60; // 7*60 o 8*60
 
         // === HORA DE SALIDA ===
-        const salidaSeleccionada = parseInt(document.querySelector('input[name="horaSalida"]:checked').value);
+        const salidaSeleccionada = parseInt(document.querySelector('input[name="horaSalida"]:checked')?.value || 7);
         let minutosAcumulados = 0;
+
 
         
     for (let i = 1; i < paradas.length - 1; i++) {
