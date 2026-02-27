@@ -636,10 +636,11 @@ async function pintarListaYMapa(datos) {
             // Resetear comidaExtra en todas
             nuevasDirecciones.forEach(d => d.comidaExtra = 0);
         
-            // Si hay comida marcada, asignar 60 min a la dirección siguiente
-            if (indiceComida !== -1 && indiceComida + 1 < nuevasDirecciones.length) {
-                nuevasDirecciones[indiceComida + 1].comidaExtra = 60;
-            }
+        // Si hay comida marcada, asignar 60 min a la MISMA dirección
+        if (indiceComida !== -1) {
+            nuevasDirecciones[indiceComida].comidaExtra = 60;
+        }
+
         
             // Llamar al cálculo con la lista ya corregida
             calcularDistanciasDesdeValencina(nuevasDirecciones);
