@@ -526,7 +526,7 @@ async function pintarListaYMapa(datos) {
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
         // duracionTotalMin = minGoogle + minCampo + comidaExtra
-        totalDuracion += duracionTotalMin * 60;
+        totalDuracion += duracionTotalMin;
         
 
 
@@ -608,7 +608,7 @@ async function pintarListaYMapa(datos) {
         const horaSalidaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumulados + duracionTotalMinUltimo);
 
         // Sumar SOLO lo que aparece entre paréntesis
-        totalDuracion += duracionTotalMinUltimo * 60;
+        totalDuracion += duracionTotalMinUltimo;
 
         infoUltimo.duracionTexto = formatearHoras(duracionTotalMinUltimo);
 
