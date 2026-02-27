@@ -260,12 +260,22 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 <script>
-        function sumarMinutosAHora(horaBase, minutosASumar) {
+function sumarMinutosAHora(horaBase, minutosASumar) {
     const totalMin = horaBase * 60 + minutosASumar;
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    return `${h}:${m.toString().padStart(2, '0')}`;
+
+    const dias = Math.floor(totalMin / (24 * 60));
+    const restoMin = totalMin % (24 * 60);
+
+    const h = Math.floor(restoMin / 60);
+    const m = restoMin % 60;
+
+    if (dias > 0) {
+        return `${dias}:${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+    } else {
+        return `${h}:${m.toString().padStart(2, '0')}`;
+    }
 }
+
 </script>
         
 <script>
