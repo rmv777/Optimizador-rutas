@@ -632,24 +632,27 @@ async function pintarListaYMapa(datos) {
     //totalDuracion += totalExtraMin * 60;
 
 
-    // Totales
-    const totalKm = (totalDistancia / 1000).toFixed(2);
-        // Convertir totalDuracion (en segundos) a formato d:h:mm
-        const totalMin = Math.floor(totalDuracion / 60);
+        // Totales
+        const totalKm = (totalDistancia / 1000).toFixed(2);
         
-        const dias = Math.floor(totalMin / (24 * 60));
-        const restoMin = totalMin % (24 * 60);
+        // totalDuracion está en segundos
+        const totalSeg = totalDuracion;
         
-        const horas = Math.floor(restoMin / 60);
-        const minutos = restoMin % 60;
+        const dias = Math.floor(totalSeg / 86400); // 24*60*60
+        const restoSeg = totalSeg % 86400;
+        
+        const horas = Math.floor(restoSeg / 3600);
+        const minutos = Math.floor((restoSeg % 3600) / 60);
+        const segundos = restoSeg % 60;
         
         let totalTiempoTexto = "";
         
         if (dias > 0) {
-            totalTiempoTexto = `${dias}:${horas.toString().padStart(2, "0")}:${minutos.toString().padStart(2, "0")}`;
+            totalTiempoTexto = `${dias}:${horas.toString().padStart(2,"0")}:${minutos.toString().padStart(2,"0")}:${segundos.toString().padStart(2,"0")}`;
         } else {
-            totalTiempoTexto = `${horas}:${minutos.toString().padStart(2, "0")}`;
+            totalTiempoTexto = `${horas}:${minutos.toString().padStart(2,"0")}:${segundos.toString().padStart(2,"0")}`;
         }
+
 
 
     const liTotal = document.createElement("li");
