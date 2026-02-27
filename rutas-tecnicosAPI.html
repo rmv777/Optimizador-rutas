@@ -590,16 +590,26 @@ async function pintarListaYMapa(datos) {
         
         // duracionTotalMinUltimo = minGoogle + minCampo + comidaExtra del último tramo
         const duracionTotalMinUltimo = Math.round(infoUltimo.duracionValor / 60);
+
+        // Hora de llegada a Valencina
+        const horaLlegadaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumulados);
         
+        // Hora de salida = llegada + duración del último tramo
+        const horaSalidaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumulados + duracionTotalMinUltimo);
+
         // Sumar SOLO lo que aparece entre paréntesis
         totalDuracion += duracionTotalMinUltimo * 60;
 
         infoUltimo.duracionTexto = formatearHoras(duracionTotalMinUltimo);
 
     const liUltimo = document.createElement("li");
-    liUltimo.innerHTML = `
-        <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
-    `;
+        liUltimo.innerHTML = `
+            <strong>Vuelta a Valencina:</strong> ${infoUltimo.distanciaTexto} (${infoUltimo.duracionTexto})
+            <div style="font-size:12px; color:#444; margin-top:4px;">
+                Llegada: ${horaLlegadaUltimo} — Salida: ${horaSalidaUltimo}
+            </div>
+        `;
+
     lista.appendChild(liUltimo);
 
     // Sumar tiempos extra
