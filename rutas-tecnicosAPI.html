@@ -502,35 +502,32 @@ async function pintarListaYMapa(datos) {
         
         // Actualizar texto en formato h:mm
         const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
+        const minutosGoogle = Math.round(infoTramo.duracionValor / 60) - (minutosExtra + comidaExtra);
+
+
             
-        // Guardar minutos acumulados ANTES de sumar este tramo
-        infoTramo.minutosAcumulados = minutosAcumulados;
-        
         // Llegada = SOLO minutos Google
-        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle);
+        infoTramo.horaLlegada = sumarMinutosAHora(
+            salidaSeleccionada,
+            minutosAcumuladosGoogle
+        );
         
         // Salida = llegada + duración total (Google + extras)
-        infoTramo.horaSalida  = sumarMinutosAHora(
+        infoTramo.horaSalida = sumarMinutosAHora(
             salidaSeleccionada,
             minutosAcumuladosGoogle + duracionTotalMin
         );
         
+        // Guardar minutos acumulados para mostrar en el <li>
+        infoTramo.minutosAcumulados = minutosAcumuladosGoogle;
+        
         // Actualizar acumuladores
-        minutosAcumuladosGoogle += minutosGoogle;      // SOLO Google
-        minutosAcumuladosTotales += duracionTotalMin;  // Google + extras
-
+        minutosAcumuladosGoogle += minutosGoogle;
+        minutosAcumuladosTotales += duracionTotalMin;
 
 
         infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
 
-        // Guardar minutos acumulados ANTES de sumar este tramo
-        infoTramo.minutosAcumulados = minutosAcumulados;
-        
-        // Ahora sí, sumar este tramo al acumulado
-        minutosAcumulados += duracionTotalMin;
-
-        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados);
-        infoTramo.horaSalida = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados + duracionTotalMin);
         
         // Acumular totales
         totalDistancia += infoTramo.distanciaValor;
@@ -611,10 +608,12 @@ async function pintarListaYMapa(datos) {
         const duracionTotalMinUltimo = Math.round(infoUltimo.duracionValor / 60);
 
         // Hora de llegada a Valencina
-        const horaLlegadaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumulados);
+        const horaLlegadaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle);
         
         // Hora de salida = llegada + duración del último tramo
-        const horaSalidaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumulados + duracionTotalMinUltimo);
+        const horaSalidaUltimo = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle + duracionTotalMinUltimo);
+        minutosAcumuladosTotales += duracionTotalMinUltimo;
+
 
         // Sumar SOLO lo que aparece entre paréntesis
         totalDuracion += duracionTotalMinUltimo;
