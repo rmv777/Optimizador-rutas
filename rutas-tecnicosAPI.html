@@ -497,14 +497,9 @@ async function pintarListaYMapa(datos) {
         // Minutos de comida si vienen marcados
         const comidaExtra = datos[i - 1].comidaExtra || 0;
         
-        // Sumar ambos al tramo
-        infoTramo.duracionValor += (minutosExtra + comidaExtra) * 60;
+        const minutosGoogle = Math.round(infoTramo.duracionValor / 60);  // Google puro
+        const duracionTotalMin = minutosGoogle + minutosExtra + comidaExtra;
         
-        // Actualizar texto en formato h:mm
-        const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
-        const minutosGoogle = Math.round(infoTramo.duracionValor / 60) - (minutosExtra + comidaExtra);
-
-
             
         // Llegada = SOLO minutos Google
         infoTramo.horaLlegada = sumarMinutosAHora(
