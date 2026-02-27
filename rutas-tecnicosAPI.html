@@ -542,81 +542,74 @@ async function pintarListaYMapa(datos) {
         
 
 
-        if (i < paradas.length - 1) {
-            const item = datos[i - 1];
-            const li = document.createElement("li");
+if (i < paradas.length - 1) {
+    const item = datos[i - 1];
+    const li = document.createElement("li");
 
-            // Necesario para Sortable
-            li.dataset.id = i - 1;
+    // Necesario para Sortable
+    li.dataset.id = i - 1;
 
-                let simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683; " : "";
-                
-                let html = `
-                    <strong>${i}.</strong> <span class="alerta-km">${simboloProhibido}</span>
-                    
-                    <input type="text" class="direccion-editable" 
-                           value="${item.direccion}" 
-                           style="width: 70%; margin-bottom: 5px;">
-                `;
-                
-                    <button class="btn-eliminar" 
-                            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-                        X
-                    </button>
-                
-                    <input type="number" class="tiempo-extra" 
-                           value="${item.minutos ?? 60}" 
-                           min="0" 
-                           style="width:60px; margin-left:10px;"> min
-                
-                <label style="margin-left:10px;">
-                    <input type="radio"
-                           name="comida"
-                           class="radio-comida"
-                           data-waschecked="${item.comida ? "true" : "false"}"
-                           ${item.comida ? "checked" : ""}>
-                    Comida
-                </label>
-                    <br>
-                `;
+    // Símbolo de prohibido si distancia > 40 km
+    const simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683;" : "";
 
+    let html = `
+        <strong>${i}.</strong> 
+        <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
+            ${simboloProhibido}
+        </span>
 
-            if (i === 1) {
-                html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
-            } else {
-                html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
-            }
+        <input type="text" class="direccion-editable" 
+               value="${item.direccion}" 
+               style="width: 70%; margin-bottom: 5px;">
 
-                html += `
-                    <div style="font-size:12px; color:#444; margin-top:4px;">
-                        Llegada: ${infoTramo.horaLlegada} — Salida: ${infoTramo.horaSalida}
-                    </div>
-                `;
+        <button class="btn-eliminar" 
+                style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+            X
+        </button>
 
-                
-            li.innerHTML = html;
+        <input type="number" class="tiempo-extra" 
+               value="${item.minutos ?? 60}" 
+               min="0" 
+               style="width:60px; margin-left:10px;"> min
 
-                // Cambiar color si esta dirección tiene comida marcada
-                if (item.comida === true) {
-                    li.style.backgroundColor = "#ffe6b3";   // color suave para comida
-                } else {
-                    li.style.backgroundColor = "";          // color por defecto
-                }
+        <label style="margin-left:10px;">
+            <input type="radio"
+                   name="comida"
+                   class="radio-comida"
+                   data-waschecked="${item.comida ? "true" : "false"}"
+                   ${item.comida ? "checked" : ""}>
+            Comida
+        </label>
+        <br>
+    `;
 
-                // Pintar en rojo si la distancia supera 40 km
-                if (infoTramo.distanciaValor > 40000) {
-                    li.style.backgroundColor = "#ffcccc";   // rojo suave
-                }
+    if (i === 1) {
+        html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
+    } else {
+        html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
+    }
 
-                // Pintar en rojo si la distancia supera 40 km
-                if (infoTramo.distanciaValor > 40000) {
-                    li.style.backgroundColor = "#ffcccc";   // rojo suave
-                }
+    html += `
+        <div style="font-size:12px; color:#444; margin-top:4px;">
+            Llegada: ${infoTramo.horaLlegada} — Salida: ${infoTramo.horaSalida}
+        </div>
+    `;
 
+    li.innerHTML = html;
 
-                
-            lista.appendChild(li);
-        }
+    // Color para comida
+    if (item.comida === true) {
+        li.style.backgroundColor = "#ffe6b3";
+    }
+
+    // Color rojo si distancia > 40 km
+    if (infoTramo.distanciaValor > 40000) {
+        li.style.backgroundColor = "#ffcccc";
+    }
+
+    lista.appendChild(li);
+}
+
     }
 
         // Último tramo: última dirección → Valencina
