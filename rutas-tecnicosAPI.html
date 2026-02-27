@@ -196,6 +196,13 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     text-align: center;
     font-size: 15px;
 }
+
+.comida-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
 </style>
 </head>
 
@@ -576,14 +583,15 @@ if (i < paradas.length - 1) {
                min="0" 
                style="width:44px; margin-left:10px;"> min
 
-        <label style="margin-left:10px;">
+        <div class="comida-wrapper" style="margin-left:10px;">
             <input type="radio"
                    name="comida"
                    class="radio-comida"
                    data-waschecked="${item.comida ? "true" : "false"}"
                    ${item.comida ? "checked" : ""}>
-            Lunch
-        </label>
+            <span>Lunch</span>
+        </div>
+
         <br>
     `;
 
