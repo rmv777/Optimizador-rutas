@@ -508,6 +508,15 @@ async function pintarListaYMapa(datos) {
             }
 
             li.innerHTML = html;
+
+                // Cambiar color si esta dirección tiene comida marcada
+                if (item.comida === true) {
+                    li.style.backgroundColor = "#ffe6b3";   // color suave para comida
+                } else {
+                    li.style.backgroundColor = "";          // color por defecto
+                }
+
+                
             lista.appendChild(li);
         }
     }
