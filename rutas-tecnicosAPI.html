@@ -491,12 +491,16 @@ async function pintarListaYMapa(datos) {
         // Actualizar texto en formato h:mm
         const duracionTotalMin = Math.round(infoTramo.duracionValor / 60);
             
-            // Calcular hora de llegada
-        const horaLlegada = sumarMinutosAHora(parseInt(salidaSeleccionada), infoTramo.minutosAcumulados);
+        // Guardar minutos acumulados ANTES de sumar este tramo
+        infoTramo.minutosAcumulados = minutosAcumulados;
         
-        // Calcular hora de salida (llegada + permanencia)
-        const permanencia = duracionTotalMin; 
-        const horaSalida = sumarMinutosAHora(parseInt(salidaSeleccionada), infoTramo.minutosAcumulados + permanencia);
+        // Calcular horas
+        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados);
+        infoTramo.horaSalida  = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados + duracionTotalMin);
+        
+        // Sumar este tramo al acumulado
+        minutosAcumulados += duracionTotalMin;
+
 
         infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
 
@@ -558,6 +562,13 @@ async function pintarListaYMapa(datos) {
                 html += `<span class="dist"><strong>Desde la anterior:</strong> ${infoTramo.distanciaTexto} (${infoTramo.duracionTexto})</span>`;
             }
 
+                html += `
+                    <div style="font-size:12px; color:#444; margin-top:4px;">
+                        Llegada: ${infoTramo.horaLlegada} — Salida: ${infoTramo.horaSalida}
+                    </div>
+                `;
+
+                
             li.innerHTML = html;
 
                 // Cambiar color si esta dirección tiene comida marcada
