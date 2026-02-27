@@ -7,6 +7,12 @@
 
 <style>
 
+        .alerta-km {
+    color: red;
+    font-size: 20px;
+    margin-right: 5px;
+}
+
         .header-app {
     text-align: center;
     padding: 20px 0;
@@ -546,7 +552,7 @@ async function pintarListaYMapa(datos) {
                 let simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683; " : "";
                 
                 let html = `
-                    <strong>${i}. ${simboloProhibido}</strong>
+                    <strong>${i}.</strong> <span class="alerta-km">${simboloProhibido}</span>
                     
                     <input type="text" class="direccion-editable" 
                            value="${item.direccion}" 
