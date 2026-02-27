@@ -485,7 +485,7 @@ async function pintarListaYMapa(datos) {
                     </button>
                 
                     <input type="number" class="tiempo-extra" 
-                           value="${item.minutos || 60}" 
+                           value="${item.minutos ?? 60}" 
                            min="0" 
                            style="width:60px; margin-left:10px;"> min
                 
