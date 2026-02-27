@@ -543,12 +543,15 @@ async function pintarListaYMapa(datos) {
             // Necesario para Sortable
             li.dataset.id = i - 1;
 
-                let html = `
-                    <strong>${i}.</strong>
+                let simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683; " : "";
                 
+                let html = `
+                    <strong>${i}. ${simboloProhibido}</strong>
+                    
                     <input type="text" class="direccion-editable" 
                            value="${item.direccion}" 
                            style="width: 70%; margin-bottom: 5px;">
+                `;
                 
                     <button class="btn-eliminar" 
                             style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
@@ -593,6 +596,17 @@ async function pintarListaYMapa(datos) {
                 } else {
                     li.style.backgroundColor = "";          // color por defecto
                 }
+
+                // Pintar en rojo si la distancia supera 40 km
+                if (infoTramo.distanciaValor > 40000) {
+                    li.style.backgroundColor = "#ffcccc";   // rojo suave
+                }
+
+                // Pintar en rojo si la distancia supera 40 km
+                if (infoTramo.distanciaValor > 40000) {
+                    li.style.backgroundColor = "#ffcccc";   // rojo suave
+                }
+
 
                 
             lista.appendChild(li);
