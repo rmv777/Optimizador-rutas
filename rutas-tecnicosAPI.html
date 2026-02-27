@@ -7,25 +7,6 @@
 
 <style>
 
-        .contenedor-tiempo-ocr {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
-    margin-bottom: 20px;
-}
-
-/* Cada tarjeta ocupa la mitad del ancho */
-.contenedor-tiempo-ocr .tarjeta {
-    flex: 1;
-}
-
-/* Responsive: en pantallas pequeñas se apilan */
-@media (max-width: 768px) {
-    .contenedor-tiempo-ocr {
-        flex-direction: column;
-    }
-}
-
         .alerta-km {
     color: red;
     font-size: 20px;
@@ -224,32 +205,28 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <h1>Optimizador de Rutas DANKESOL</h1>
 </header>
 
-        <div class="contenedor-tiempo-ocr">
+<div class="contenedor-principal">
+        <div class="tarjeta">
+            <h2>🌦️ Previsión del tiempo</h2>
         
-            <div class="tarjeta">
-                <h2>🌦️ Previsión del tiempo</h2>
-            
-                <label for="fecha-clima" style="font-weight:600;">Seleccionar día:</label><br>
-                <input type="date" id="fecha-clima" style="margin-top:8px;">
-            
-                <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-top:12px;">
-                    📅 Ver previsión
-                </button>
-            
-                <div id="resultado-clima" style="margin-top:15px;"></div>
-            </div>
+            <label for="fecha-clima" style="font-weight:600;">Seleccionar día:</label><br>
+            <input type="date" id="fecha-clima" style="margin-top:8px;">
         
-            <div class="tarjeta">
-                <h2>📸 OCR — Cargar direcciones desde imagen</h2>
-                <input type="file" id="inputImagen" accept="image/*" onchange="procesarImagenOCR(event)">
-                
-                <div id="ocr-loading" style="display:none; margin-top:10px;">
-                    <span class="reloj-animado">⏳</span> Procesando imagen...
-                </div>
-            </div>
+            <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-top:12px;">
+                📅 Ver previsión
+            </button>
         
+            <div id="resultado-clima" style="margin-top:15px;"></div>
         </div>
 
+    <div class="tarjeta">
+        <h2>📸 OCR — Cargar direcciones desde imagen</h2>
+        <input type="file" id="inputImagen" accept="image/*" onchange="procesarImagenOCR(event)">
+       <div id="ocr-loading" style="display:none; margin-top:10px;">
+    <span class="reloj-animado">⏳</span> Procesando imagen...
+</div>
+
+    </div>
 
         <div style="margin:10px 0;">
     <label>
@@ -597,7 +574,7 @@ if (i < paradas.length - 1) {
         <input type="number" class="tiempo-extra" 
                value="${item.minutos ?? 60}" 
                min="0" 
-               style="width:38px; margin-left:10px;"> min
+               style="width:40px; margin-left:10px;"> min
 
         <label style="margin-left:10px;">
             <input type="radio"
@@ -605,7 +582,7 @@ if (i < paradas.length - 1) {
                    class="radio-comida"
                    data-waschecked="${item.comida ? "true" : "false"}"
                    ${item.comida ? "checked" : ""}>
-            Lunch
+            Comida
         </label>
         <br>
     `;
