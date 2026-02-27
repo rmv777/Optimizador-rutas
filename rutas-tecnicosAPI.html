@@ -247,9 +247,9 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <button id="btn-anadir" class="boton-accion boton-anadir">➕ Añadir dirección</button>
         <button id="btn-recalcular" class="boton-accion boton-recalcular">🔄 Recalcular ruta</button>
         <button id="btn-exportar" class="boton-accion boton-exportar">📤 Exportar a Google Maps</button>
-        <button id="btnWhatsappRuta" style="margin-top:15px; background:#25D366; color:white; padding:10px; border:none; border-radius:5px; cursor:pointer;">
-    Enviar ruta completa por WhatsApp
-</button>
+        <button id="btnWhatsappRuta" class="boton-accion" style="background:#25D366;">
+            💬 Enviar ruta por WhatsApp
+        </button>
 
     </div>
 
@@ -574,7 +574,7 @@ if (i < paradas.length - 1) {
         <input type="number" class="tiempo-extra" 
                value="${item.minutos ?? 60}" 
                min="0" 
-               style="width:40px; margin-left:10px;"> min
+               style="width:44px; margin-left:10px;"> min
 
         <label style="margin-left:10px;">
             <input type="radio"
