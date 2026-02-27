@@ -445,7 +445,7 @@ async function pintarListaYMapa(datos) {
         const infoTramo = await calcularTramo(origen, destino);
 
          // Minutos extra reales del técnico
-        const minutosExtra = datos[i - 1].minutos || 0;
+        const minutosExtra = datos[i - 1].minutos ?? 0;
         
         // Minutos de comida si vienen marcados
         const comidaExtra = datos[i - 1].comidaExtra || 0;
