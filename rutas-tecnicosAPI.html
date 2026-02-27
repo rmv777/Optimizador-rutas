@@ -539,6 +539,7 @@ async function pintarListaYMapa(datos) {
         // Sumar SOLO lo que aparece entre paréntesis
         totalDuracion += duracionTotalMinUltimo * 60;
 
+        infoUltimo.duracionTexto = formatearHoras(duracionTotalMinUltimo);
 
     const liUltimo = document.createElement("li");
     liUltimo.innerHTML = `
