@@ -466,9 +466,6 @@ async function pintarListaYMapa(datos) {
     let totalDistancia = 0;
     let totalDuracion = 0;
 
-        // Obtener hora de salida seleccionada
-        const salidaSeleccionada = document.querySelector('input[name="horaSalida"]:checked').value;
-        let horaActualMin = parseInt(salidaSeleccionada) * 60; // 7*60 o 8*60
 
         // === HORA DE SALIDA ===
         const salidaSeleccionada = parseInt(document.querySelector('input[name="horaSalida"]:checked')?.value || 7);
