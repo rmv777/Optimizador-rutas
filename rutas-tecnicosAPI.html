@@ -479,7 +479,9 @@ async function pintarListaYMapa(datos) {
 
         // === HORA DE SALIDA ===
         const salidaSeleccionada = parseInt(document.querySelector('input[name="horaSalida"]:checked')?.value || 7);
-        let minutosAcumulados = 0;
+        let minutosAcumuladosGoogle = 0;   // SOLO Google
+        let minutosAcumuladosTotales = 0;  // Google + extras
+
 
 
         
@@ -504,12 +506,19 @@ async function pintarListaYMapa(datos) {
         // Guardar minutos acumulados ANTES de sumar este tramo
         infoTramo.minutosAcumulados = minutosAcumulados;
         
-        // Calcular horas
-        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados);
-        infoTramo.horaSalida  = sumarMinutosAHora(salidaSeleccionada, infoTramo.minutosAcumulados + duracionTotalMin);
+        // Llegada = SOLO minutos Google
+        infoTramo.horaLlegada = sumarMinutosAHora(salidaSeleccionada, minutosAcumuladosGoogle);
         
-        // Sumar este tramo al acumulado
-        minutosAcumulados += duracionTotalMin;
+        // Salida = llegada + duración total (Google + extras)
+        infoTramo.horaSalida  = sumarMinutosAHora(
+            salidaSeleccionada,
+            minutosAcumuladosGoogle + duracionTotalMin
+        );
+        
+        // Actualizar acumuladores
+        minutosAcumuladosGoogle += minutosGoogle;      // SOLO Google
+        minutosAcumuladosTotales += duracionTotalMin;  // Google + extras
+
 
 
         infoTramo.duracionTexto = `(${formatearHoras(duracionTotalMin)})`;
@@ -636,7 +645,8 @@ async function pintarListaYMapa(datos) {
         const totalKm = (totalDistancia / 1000).toFixed(2);
         
         // totalDuracion YA está en minutos
-        const totalMin = totalDuracion;
+        const totalMin = minutosAcumuladosTotales;
+
         
         // Calcular días, horas y minutos
         const dias = Math.floor(totalMin / (24 * 60));
