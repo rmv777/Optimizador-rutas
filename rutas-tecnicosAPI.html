@@ -392,13 +392,70 @@ async function procesarImagenOCR(event) {
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
-
+        
+        // 2) Añadir clasificación de cubiertas (NUEVO) 
+        procesarDireccionesOCR(texto);
+            
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
 
         // Ocultar indicador si hay error
         document.getElementById("ocr-loading").style.display = "none";
+    }
+}
+
+// === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
+// Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
+
+async function procesarDireccionesOCR(textoOCR) {
+    const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+
+    const contenedor = document.getElementById("listaDirecciones");
+    contenedor.innerHTML = ""; // limpiar lista anterior
+
+    for (const direccion of lineas) {
+        const item = document.createElement("div");
+        item.className = "direccion-item";
+        item.innerHTML = `
+            <p><strong>${direccion}</strong></p>
+            <p id="estado-${direccion}">Obteniendo imagen aérea...</p>
+        `;
+        contenedor.appendChild(item);
+
+        try {
+            // === 1) Obtener imagen aérea de Google Maps ===
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
+
+            const imgResponse = await fetch(urlMapa);
+            const blob = await imgResponse.blob();
+
+            document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
+
+            // === 2) Enviar imagen a Roboflow ===
+            const formData = new FormData();
+            formData.append("file", blob, "map.jpg");
+
+            const res = await fetch(
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await res.json();
+            const tipo = data?.predictions?.[0]?.class || "No detectado";
+
+            // === 3) Mostrar resultado ===
+            document.getElementById(`estado-${direccion}`).innerHTML =
+                `Cubierta detectada: <strong>${tipo}</strong>`;
+
+        } catch (error) {
+            console.error("Error procesando dirección:", direccion, error);
+            document.getElementById(`estado-${direccion}`).textContent =
+                "Error al obtener o clasificar la imagen.";
+        }
     }
 }
 
