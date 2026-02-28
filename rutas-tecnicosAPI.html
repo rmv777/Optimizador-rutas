@@ -395,7 +395,7 @@ async function procesarImagenOCR(event) {
         );
         
         // 2) Añadir clasificación de cubiertas  
-        await procesarDireccionesOCR(textoOCR);
+        await procesarDireccionesOCR(texto);
             
     } catch (error) {
         console.error("Error OCR:", error);
@@ -468,9 +468,6 @@ async function procesarDireccionesOCR(textoOCR) {
         }
     }
 }
-
-
-
 
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
