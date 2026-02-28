@@ -291,6 +291,20 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 <script src="https://cdn.roboflow.com/inference/inference-latest.js"></script>
 
+        <script>
+                function normalizarDireccion(str) {
+    return str
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\b(calle|cl|c\/|avda|avenida|camino|cmno|crta|carretera)\b/g, "")
+        .replace(/cadiz/g, "") // elimina provincia repetida
+        .replace(/[,\.]/g, "")
+        .replace(/-/g, " ") // elimina guiones tipo 13-9
+        .replace(/\s+/g, " ")
+        .trim();
+}
+        </script>
+        
 <script>
 let modeloCubiertas = null;
 
