@@ -393,7 +393,7 @@ async function procesarImagenOCR(event) {
             lineas.map(d => ({ direccion: d }))
         );
 
-        // 2) Clasificar cubiertas (CORRECTO)
+        // 2) Clasificar cubiertas
         await procesarDireccionesOCR(texto);
 
         // 3) Ocultar indicador al final
