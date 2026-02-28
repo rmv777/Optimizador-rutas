@@ -412,30 +412,42 @@ async function procesarImagenOCR(event) {
 async function procesarDireccionesOCR(textoOCR) {
     const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    // Esto lo dejamos: muestra las direcciones OCR crudas
-    const contenedor = document.getElementById("listaDirecciones");
-    contenedor.innerHTML = "";
+    for (const direccionOCR of lineas) {
 
-    for (const direccion of lineas) {
+        // Buscar el <li> que contiene esta dirección
+        const todosLi = document.querySelectorAll("#lista-direcciones li");
+        let liCoincidente = null;
 
-        // Mostrar OCR crudo (lo mantenemos)
-        const item = document.createElement("div");
-        item.className = "direccion-item";
-        item.innerHTML = `
-            <p><strong>${direccion}</strong></p>
-            <p id="estado-${direccion}">Obteniendo imagen aérea...</p>
-        `;
-        contenedor.appendChild(item);
+        for (const li of todosLi) {
+            const input = li.querySelector(".direccion-editable");
+            if (!input) continue;
+
+            const direccionLista = input.value.trim().toLowerCase();
+            const direccionBuscada = direccionOCR.trim().toLowerCase();
+
+            if (direccionLista.includes(direccionBuscada)) {
+                liCoincidente = li;
+                break;
+            }
+        }
+
+        if (!liCoincidente) {
+            console.warn("No se encontró coincidencia para:", direccionOCR);
+            continue;
+        }
+
+        const idSeguro = liCoincidente
+            .querySelector(".direccion-editable")
+            .value.replace(/\s+/g, "_")
+            .replace(/[^a-zA-Z0-9_]/g, "");
 
         try {
-            // === Google Maps Static ===
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
+            // Obtener imagen aérea
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
-            document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
-
-            // === Roboflow ===
+            // Clasificar con Roboflow
             const formData = new FormData();
             formData.append("file", blob, "map.jpg");
 
@@ -447,25 +459,16 @@ async function procesarDireccionesOCR(textoOCR) {
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
 
-            // === ACTUALIZAR LISTA PRINCIPAL ===
-            const idSeguro = direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+            // Actualizar el <p> correcto
             const destino = document.getElementById(`cubierta-${idSeguro}`);
-
-            if (destino) {
-                destino.textContent = `Cubierta detectada: ${tipo}`;
-            }
-
-            // Mostrar también en la lista OCR cruda
-            document.getElementById(`estado-${direccion}`).innerHTML =
-                `Cubierta detectada: <strong>${tipo}</strong>`;
+            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
 
         } catch (error) {
-            console.error("Error procesando dirección:", direccion, error);
-            document.getElementById(`estado-${direccion}`).textContent =
-                "Error al obtener o clasificar la imagen.";
+            console.error("Error procesando dirección:", direccionOCR, error);
         }
     }
 }
+
 
 
 
