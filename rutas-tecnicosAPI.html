@@ -412,10 +412,13 @@ async function procesarImagenOCR(event) {
 async function procesarDireccionesOCR(textoOCR) {
     const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
+    // Esto lo dejamos: muestra las direcciones OCR crudas
     const contenedor = document.getElementById("listaDirecciones");
-    contenedor.innerHTML = ""; // limpiar lista anterior
+    contenedor.innerHTML = "";
 
     for (const direccion of lineas) {
+
+        // Mostrar OCR crudo (lo mantenemos)
         const item = document.createElement("div");
         item.className = "direccion-item";
         item.innerHTML = `
@@ -425,34 +428,34 @@ async function procesarDireccionesOCR(textoOCR) {
         contenedor.appendChild(item);
 
         try {
-            // === 1) Obtener imagen aérea de Google Maps ===
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
-
+            // === Google Maps Static ===
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
             document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
 
-            // === 2) Enviar imagen a Roboflow ===
+            // === Roboflow ===
             const formData = new FormData();
             formData.append("file", blob, "map.jpg");
 
             const res = await fetch(
-                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
-                {
-                    method: "POST",
-                    body: formData
-                }
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=TU_API_KEY",
+                { method: "POST", body: formData }
             );
 
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
+
+            // === ACTUALIZAR LISTA PRINCIPAL ===
             const idSeguro = direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
-            document.getElementById(`cubierta-${idSeguro}`).textContent =
-            `Cubierta detectada: ${tipo}`;
+            const destino = document.getElementById(`cubierta-${idSeguro}`);
 
+            if (destino) {
+                destino.textContent = `Cubierta detectada: ${tipo}`;
+            }
 
-            // === 3) Mostrar resultado ===
+            // Mostrar también en la lista OCR cruda
             document.getElementById(`estado-${direccion}`).innerHTML =
                 `Cubierta detectada: <strong>${tipo}</strong>`;
 
@@ -463,6 +466,7 @@ async function procesarDireccionesOCR(textoOCR) {
         }
     }
 }
+
 
 
 
