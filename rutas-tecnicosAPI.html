@@ -408,6 +408,16 @@ async function procesarImagenOCR(event) {
     }
 }
 
+        function normalizarDireccion(str) {
+    return str
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\b(calle|cl|c\/|avda|avenida|camino|cmno|crta|carretera)\b/g, "")
+        .replace(/[,\.]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
@@ -421,14 +431,15 @@ async function procesarDireccionesOCR(textoOCR) {
         const todosLi = document.querySelectorAll("#lista-direcciones li");
         let liCoincidente = null;
 
+       const buscadaNorm = normalizarDireccion(direccionOCR);
+
         for (const li of todosLi) {
             const input = li.querySelector(".direccion-editable");
             if (!input) continue;
-
-            const direccionLista = input.value.trim().toLowerCase();
-            const direccionBuscada = direccionOCR.trim().toLowerCase();
-
-            if (direccionLista.includes(direccionBuscada)) {
+        
+            const listaNorm = normalizarDireccion(input.value);
+        
+            if (listaNorm.includes(buscadaNorm) || buscadaNorm.includes(listaNorm)) {
                 liCoincidente = li;
                 break;
             }
