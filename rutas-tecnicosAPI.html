@@ -410,7 +410,9 @@ async function procesarImagenOCR(event) {
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
-        
+
+         await new Promise(r => setTimeout(r, 300));
+   
         // 2) Añadir clasificación de cubiertas (NUEVO) 
         procesarDireccionesOCR(texto);
             
