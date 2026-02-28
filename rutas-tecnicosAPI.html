@@ -279,6 +279,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     </div>
 
     <ul id="lista-direcciones"></ul>
+        
 </div>
 <div class="tarjeta">
     <h2>🗺️ Mapa de la ruta</h2>
@@ -446,6 +447,10 @@ async function procesarDireccionesOCR(textoOCR) {
 
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
+            const idSeguro = direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+            document.getElementById(`cubierta-${idSeguro}`).textContent =
+            `Cubierta detectada: ${tipo}`;
+
 
             // === 3) Mostrar resultado ===
             document.getElementById(`estado-${direccion}`).innerHTML =
@@ -638,37 +643,44 @@ if (i < paradas.length - 1) {
     // Símbolo de prohibido si distancia > 40 km
     const simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683;" : "";
 
-    let html = `
-        <strong>${i}.</strong> 
-        <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
-            ${simboloProhibido}
-        </span>
+let html = `
+    <strong>${i}.</strong> 
+    <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
+        ${simboloProhibido}
+    </span>
 
-        <input type="text" class="direccion-editable" 
-               value="${item.direccion}" 
-               style="width: 70%; margin-bottom: 5px;">
+    <input type="text" class="direccion-editable" 
+           value="${item.direccion}" 
+           style="width: 70%; margin-bottom: 5px;">
 
-        <button class="btn-eliminar" 
-                style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-            X
-        </button>
+    <button class="btn-eliminar" 
+            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+        X
+    </button>
 
-        <input type="number" class="tiempo-extra" 
-               value="${item.minutos ?? 60}" 
-               min="0" 
-               style="width:44px; margin-left:10px;"> min
+    <input type="number" class="tiempo-extra" 
+           value="${item.minutos ?? 60}" 
+           min="0" 
+           style="width:44px; margin-left:10px;"> min
 
-        <div class="comida-wrapper" style="margin-left:10px;">
-            <input type="radio"
-                   name="comida"
-                   class="radio-comida"
-                   data-waschecked="${item.comida ? "true" : "false"}"
-                   ${item.comida ? "checked" : ""}>
-            <span>Lunch</span>
-        </div>
+    <div class="comida-wrapper" style="margin-left:10px;">
+        <input type="radio"
+               name="comida"
+               class="radio-comida"
+               data-waschecked="${item.comida ? "true" : "false"}"
+               ${item.comida ? "checked" : ""}>
+        <span>Lunch</span>
+    </div>
 
-        <br>
-    `;
+    <br>
+
+    <p class="tipo-cubierta" 
+       id="cubierta-${item.direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}"
+       style="margin:4px 0; font-size:14px; color:#333;">
+       Detectando cubierta...
+    </p>
+`;
+
 
     if (i === 1) {
         html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
