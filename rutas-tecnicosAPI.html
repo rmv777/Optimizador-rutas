@@ -279,6 +279,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     </div>
 
     <ul id="lista-direcciones"></ul>
+        
 </div>
 <div class="tarjeta">
     <h2>🗺️ Mapa de la ruta</h2>
@@ -446,6 +447,10 @@ async function procesarDireccionesOCR(textoOCR) {
 
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
+            const idSeguro = direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "");
+            document.getElementById(`cubierta-${idSeguro}`).textContent =
+            `Cubierta detectada: ${tipo}`;
+
 
             // === 3) Mostrar resultado ===
             document.getElementById(`estado-${direccion}`).innerHTML =
@@ -668,6 +673,14 @@ if (i < paradas.length - 1) {
         </div>
 
         <br>
+        html += `
+    <p class="tipo-cubierta" 
+       id="cubierta-${item.direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}"
+       style="margin:4px 0; font-size:14px; color:#333;">
+       Detectando cubierta...
+    </p>
+`;
+
     `;
 
     if (i === 1) {
