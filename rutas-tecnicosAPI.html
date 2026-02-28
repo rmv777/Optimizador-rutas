@@ -247,6 +247,12 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
     </div>
 
+        <input type="file" id="fotoCubierta" accept="image/*">
+        <button id="clasificarBtn">Clasificar cubierta</button>
+        
+        <p id="resultadoCubierta"></p>
+
+
         <div style="margin:10px 0;">
     <label>
         <input type="radio" name="horaSalida" value="7" checked>
@@ -812,8 +818,6 @@ if (i < paradas.length - 1) {
         });
 
 
-
-
     // Exportar
     document.getElementById("btn-exportar").addEventListener("click", () => {
     const inputs = document.querySelectorAll(".direccion-editable");
@@ -988,6 +992,44 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
+                   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
+        
+        document.getElementById("clasificarBtn").addEventListener("click", async () => {
+          const fileInput = document.getElementById("fotoCubierta");
+          const file = fileInput.files[0];
+        
+          if (!file) {
+            alert("Selecciona una imagen primero");
+            return;
+          }
+        
+          const formData = new FormData();
+          formData.append("file", file);
+        
+          try {
+            const res = await fetch(
+              "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+              {
+                method: "POST",
+                body: formData
+              }
+            );
+        
+            const data = await res.json();
+        
+            console.log("Respuesta Roboflow:", data);
+        
+            const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
+        
+            document.getElementById("resultadoCubierta").textContent =
+              "Tipo de cubierta: " + prediccion;
+        
+          } catch (error) {
+            console.error("Error al clasificar:", error);
+            document.getElementById("resultadoCubierta").textContent =
+              "Error al clasificar la imagen.";
+          }
+        });
 </script>
 
 
