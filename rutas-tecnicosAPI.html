@@ -431,18 +431,19 @@ async function procesarDireccionesOCR(textoOCR) {
 
     for (const direccionOCR of lineas) {
 
-        // Buscar el <li> que contiene esta dirección
+        // Buscar el <li> correspondiente
         const todosLi = document.querySelectorAll("#lista-direcciones li");
         let liCoincidente = null;
+
+        const buscadaNorm = normalizarDireccion(direccionOCR);
 
         for (const li of todosLi) {
             const input = li.querySelector(".direccion-editable");
             if (!input) continue;
 
-            const direccionLista = input.value.trim().toLowerCase();
-            const direccionBuscada = direccionOCR.trim().toLowerCase();
+            const listaNorm = normalizarDireccion(input.value);
 
-            if (direccionLista.includes(direccionBuscada)) {
+            if (listaNorm.includes(buscadaNorm) || buscadaNorm.includes(listaNorm)) {
                 liCoincidente = li;
                 break;
             }
@@ -459,24 +460,27 @@ async function procesarDireccionesOCR(textoOCR) {
             .replace(/[^a-zA-Z0-9_]/g, "");
 
         try {
-            // Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
+            // 1. Obtener imagen aérea
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY_GOOGLE`;
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
-            // Clasificar con Roboflow
-            const formData = new FormData();
-            formData.append("file", blob, "map.jpg");
+            // 2. Crear <img> para inference.js
+            const imgURL = URL.createObjectURL(blob);
+            const img = new Image();
+            img.src = imgURL;
 
-            const res = await fetch(
-                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
-                { method: "POST", body: formData }
-            );
+            await new Promise(resolve => img.onload = resolve);
 
-            const data = await res.json();
-            const tipo = data?.predictions?.[0]?.class || "No detectado";
+            // 3. Clasificar con inference.js
+            const pred = await modeloCubiertas.predict(img);
 
-            // Actualizar el <p> correcto
+            let tipo = "No detectado";
+            if (pred && pred.length > 0) {
+                tipo = pred[0].class;
+            }
+
+            // 4. Actualizar el <p>
             const destino = document.getElementById(`cubierta-${idSeguro}`);
             if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
 
@@ -485,9 +489,6 @@ async function procesarDireccionesOCR(textoOCR) {
         }
     }
 }
-
-
-
 
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
