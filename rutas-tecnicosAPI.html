@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-
         .alerta-km {
     color: red;
     font-size: 20px;
@@ -29,7 +28,6 @@
     font-weight: 700;
 }
 
-
         /* Animación del reloj de arena */
     @keyframes girarArena {
         0% { transform: rotate(0deg); }
@@ -42,7 +40,6 @@
         animation: girarArena 1s infinite linear;
         font-size: 22px;
     }
-
 
     /* Botones principales de acciones */
 .botones-acciones {
@@ -517,8 +514,6 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
                         comida: listaDirecciones[idx].comida || false
                     };
                 });
-
-
 
             // ORDENAR (de más lejos a más cerca)
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
@@ -1167,3 +1162,81 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
     div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
 
 });
+
+        </script>
+        <!-- ARRASTRAR Y SOLTAR -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
+
+<script>
+new Sortable(document.getElementById("lista-direcciones"), {
+    animation: 150,
+    onEnd: function () {
+        console.log("Nuevo orden manual aplicado");
+    }
+});
+</script>
+        
+<script>
+document.addEventListener("click", function(e) {
+    if (!e.target.classList.contains("radio-comida")) return;
+
+    const yaMarcado = e.target.checked && e.target.dataset.waschecked === "true";
+
+    // Resetear estado previo de todos
+    document.querySelectorAll(".radio-comida").forEach(r => {
+        r.dataset.waschecked = "false";
+    });
+
+    if (yaMarcado) {
+        e.target.checked = false;
+        e.target.dataset.waschecked = "false";
+    } else {
+        e.target.checked = true;
+        e.target.dataset.waschecked = "true";
+    }
+});
+
+        document.getElementById("btnWhatsappRuta").addEventListener("click", function () {
+
+    // Obtener todas las direcciones en orden
+    const items = document.querySelectorAll("#lista-direcciones li");
+    if (items.length === 0) {
+        alert("No hay direcciones para enviar.");
+        return;
+    }
+
+    let partes = [];
+
+    items.forEach(li => {
+        const input = li.querySelector(".direccion-editable");
+        if (!input) return;
+
+        const direccion = input.value.trim();
+        if (direccion !== "") {
+            partes.push(encodeURIComponent(direccion));
+        }
+    });
+
+    if (partes.length < 2) {
+        alert("Se necesitan al menos dos direcciones para crear una ruta.");
+        return;
+    }
+
+    // MISMO ENLACE QUE EL BOTÓN DE EXPORTAR
+    const urlRuta = "https://www.google.com/maps/dir/" + partes.join("/");
+
+    // Preparar mensaje para WhatsApp
+    const mensaje = "🗺️ Ruta completa del día:\n" + urlRuta;
+
+    // Abrir WhatsApp con el mensaje
+    const urlWhatsapp = "https://wa.me/?text=" + encodeURIComponent(mensaje);
+    window.open(urlWhatsapp, "_blank");
+});
+
+</script>
+
+
+</div>
+
+</body>
+</html>
