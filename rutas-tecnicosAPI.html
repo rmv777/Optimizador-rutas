@@ -288,7 +288,24 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 
 </div>
-    
+
+<script src="https://cdn.roboflow.com/inference/inference-latest.js"></script>
+
+<script>
+let modeloCubiertas = null;
+
+async function cargarModeloCubiertas() {
+    modeloCubiertas = await inference.loadModel({
+        model: "cubiertas-39jag",
+        version: 2,
+        apiKey: "Tx25IobHbnq9QuaHZ76H"
+    });
+}
+
+cargarModeloCubiertas();
+</script>
+
+
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
 
@@ -1068,44 +1085,45 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
-                   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
+  // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
         
-        document.getElementById("clasificarBtn").addEventListener("click", async () => {
-          const fileInput = document.getElementById("fotoCubierta");
-          const file = fileInput.files[0];
-        
-          if (!file) {
-            alert("Selecciona una imagen primero");
-            return;
-          }
-        
-          const formData = new FormData();
-          formData.append("file", file);
-        
-          try {
-            const res = await fetch(
-              "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
-              {
-                method: "POST",
-                body: formData
-              }
-            );
-        
-            const data = await res.json();
-        
-            console.log("Respuesta Roboflow:", data);
-        
-            const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
-        
-            document.getElementById("resultadoCubierta").textContent =
-              "Tipo de cubierta: " + prediccion;
-        
-          } catch (error) {
-            console.error("Error al clasificar:", error);
-            document.getElementById("resultadoCubierta").textContent =
-              "Error al clasificar la imagen.";
-          }
-        });
+  document.getElementById("clasificarBtn").addEventListener("click", async () => {
+  const fileInput = document.getElementById("fotoCubierta");
+  const file = fileInput.files[0];
+
+  if (!file) {
+    alert("Selecciona una imagen primero");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch(
+      "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+      {
+        method: "POST",
+        body: formData
+      }
+    );
+
+    const data = await res.json();
+
+    console.log("Respuesta Roboflow:", data);
+
+    const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
+
+    document.getElementById("resultadoCubierta").textContent =
+      "Tipo de cubierta: " + prediccion;
+
+  } catch (error) {
+    console.error("Error al clasificar:", error);
+    document.getElementById("resultadoCubierta").textContent =
+      "Error al clasificar la imagen.";
+  }
+});
+
 </script>
 
 
