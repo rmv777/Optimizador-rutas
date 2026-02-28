@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
+
         .alerta-km {
     color: red;
     font-size: 20px;
@@ -28,6 +29,7 @@
     font-weight: 700;
 }
 
+
         /* Animación del reloj de arena */
     @keyframes girarArena {
         0% { transform: rotate(0deg); }
@@ -40,6 +42,7 @@
         animation: girarArena 1s infinite linear;
         font-size: 22px;
     }
+
 
     /* Botones principales de acciones */
 .botones-acciones {
@@ -276,7 +279,6 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     </div>
 
     <ul id="lista-direcciones"></ul>
-        
 </div>
 <div class="tarjeta">
     <h2>🗺️ Mapa de la ruta</h2>
@@ -372,6 +374,9 @@ async function procesarImagenOCR(event) {
             { logger: m => console.log(m) }
         );
 
+        // Ocultar indicador
+        document.getElementById("ocr-loading").style.display = "none";
+
         const texto = resultado.data.text;
 
         const lineas = texto
@@ -381,21 +386,16 @@ async function procesarImagenOCR(event) {
 
         if (lineas.length === 0) {
             mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
-            document.getElementById("ocr-loading").style.display = "none";
             return;
         }
 
-        // 1) Pintar lista principal
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
-
-        // 2) Clasificar cubiertas
-        await procesarDireccionesOCR(texto);
-
-        // 3) Ocultar indicador al final
-        document.getElementById("ocr-loading").style.display = "none";
-
+        
+        // 2) Añadir clasificación de cubiertas (NUEVO) 
+        procesarDireccionesOCR(texto);
+            
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
@@ -405,80 +405,60 @@ async function procesarImagenOCR(event) {
     }
 }
 
-        function normalizarDireccion(str) {
-    return str
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/\b(calle|cl|c\/|avda|avenida|camino|cmno|crta|carretera)\b/g, "")
-        .replace(/[,\.]/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
-}
-
-
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
 
 async function procesarDireccionesOCR(textoOCR) {
     const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    for (const direccionOCR of lineas) {
+    const contenedor = document.getElementById("listaDirecciones");
+    contenedor.innerHTML = ""; // limpiar lista anterior
 
-        // Buscar el <li> que contiene esta dirección
-        const todosLi = document.querySelectorAll("#lista-direcciones li");
-        let liCoincidente = null;
-
-       const buscadaNorm = normalizarDireccion(direccionOCR);
-
-        for (const li of todosLi) {
-            const input = li.querySelector(".direccion-editable");
-            if (!input) continue;
-        
-            const listaNorm = normalizarDireccion(input.value);
-        
-            if (listaNorm.includes(buscadaNorm) || buscadaNorm.includes(listaNorm)) {
-                liCoincidente = li;
-                break;
-            }
-        }
-
-        if (!liCoincidente) {
-            console.warn("No se encontró coincidencia para:", direccionOCR);
-            continue;
-        }
-
-        const idSeguro = liCoincidente
-            .querySelector(".direccion-editable")
-            .value.replace(/\s+/g, "_")
-            .replace(/[^a-zA-Z0-9_]/g, "");
+    for (const direccion of lineas) {
+        const item = document.createElement("div");
+        item.className = "direccion-item";
+        item.innerHTML = `
+            <p><strong>${direccion}</strong></p>
+            <p id="estado-${direccion}">Obteniendo imagen aérea...</p>
+        `;
+        contenedor.appendChild(item);
 
         try {
-            // Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
+            // === 1) Obtener imagen aérea de Google Maps ===
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
+
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
-            // Clasificar con Roboflow
+            document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
+
+            // === 2) Enviar imagen a Roboflow ===
             const formData = new FormData();
             formData.append("file", blob, "map.jpg");
 
             const res = await fetch(
-                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=TU_API_KEY",
-                { method: "POST", body: formData }
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+                {
+                    method: "POST",
+                    body: formData
+                }
             );
 
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
 
-            // Actualizar el <p> correcto
-            const destino = document.getElementById(`cubierta-${idSeguro}`);
-            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
+            // === 3) Mostrar resultado ===
+            document.getElementById(`estado-${direccion}`).innerHTML =
+                `Cubierta detectada: <strong>${tipo}</strong>`;
 
         } catch (error) {
-            console.error("Error procesando dirección:", direccionOCR, error);
+            console.error("Error procesando dirección:", direccion, error);
+            document.getElementById(`estado-${direccion}`).textContent =
+                "Error al obtener o clasificar la imagen.";
         }
     }
 }
+
 
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
@@ -514,6 +494,8 @@ function calcularDistanciasDesdeValencina(listaDirecciones) {
                         comida: listaDirecciones[idx].comida || false
                     };
                 });
+
+
 
             // ORDENAR (de más lejos a más cerca)
             datos.sort((a, b) => b.distanciaValor - a.distanciaValor);
@@ -656,44 +638,37 @@ if (i < paradas.length - 1) {
     // Símbolo de prohibido si distancia > 40 km
     const simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683;" : "";
 
-let html = `
-    <strong>${i}.</strong> 
-    <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
-        ${simboloProhibido}
-    </span>
+    let html = `
+        <strong>${i}.</strong> 
+        <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
+            ${simboloProhibido}
+        </span>
 
-    <input type="text" class="direccion-editable" 
-           value="${item.direccion}" 
-           style="width: 70%; margin-bottom: 5px;">
+        <input type="text" class="direccion-editable" 
+               value="${item.direccion}" 
+               style="width: 70%; margin-bottom: 5px;">
 
-    <button class="btn-eliminar" 
-            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-        X
-    </button>
+        <button class="btn-eliminar" 
+                style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+            X
+        </button>
 
-    <input type="number" class="tiempo-extra" 
-           value="${item.minutos ?? 60}" 
-           min="0" 
-           style="width:44px; margin-left:10px;"> min
+        <input type="number" class="tiempo-extra" 
+               value="${item.minutos ?? 60}" 
+               min="0" 
+               style="width:44px; margin-left:10px;"> min
 
-    <div class="comida-wrapper" style="margin-left:10px;">
-        <input type="radio"
-               name="comida"
-               class="radio-comida"
-               data-waschecked="${item.comida ? "true" : "false"}"
-               ${item.comida ? "checked" : ""}>
-        <span>Lunch</span>
-    </div>
+        <div class="comida-wrapper" style="margin-left:10px;">
+            <input type="radio"
+                   name="comida"
+                   class="radio-comida"
+                   data-waschecked="${item.comida ? "true" : "false"}"
+                   ${item.comida ? "checked" : ""}>
+            <span>Lunch</span>
+        </div>
 
-    <br>
-
-    <p class="tipo-cubierta" 
-       id="cubierta-${item.direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}"
-       style="margin:4px 0; font-size:14px; color:#333;">
-       Detectando cubierta...
-    </p>
-`;
-
+        <br>
+    `;
 
     if (i === 1) {
         html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
@@ -1003,167 +978,8 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
 });
 
 
-  // Geocodificar Valencina
-    await new Promise((resolve) => {
-        geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
-            if (status === "OK" && results[0]) {
-                const origen = results[0].geometry.location;
-                coordenadasRuta.unshift(origen);
-                coordenadasRuta.push(origen);
-                bounds.extend(origen);
-                dibujarRutaCompleta(coordenadasRuta);
-            }
-            resolve();
-        });
-    });
 
-    map.fitBounds(bounds);
-}
-
-    // Recalcular
-        document.getElementById("btn-recalcular").addEventListener("click", () => {
-            const items = document.querySelectorAll("#lista-direcciones li");
-        
-            const nuevasDirecciones = [];
-            let indiceComida = -1;
-        
-            items.forEach((li, idx) => {
-                const dirInput = li.querySelector(".direccion-editable");
-                const minInput = li.querySelector(".tiempo-extra");
-                const radio = li.querySelector(".radio-comida");
-        
-                if (!dirInput) return;
-        
-                nuevasDirecciones.push({
-                    direccion: dirInput.value.trim(),
-                    minutos: parseInt(minInput.value) || 0,
-                    comida: radio ? (radio.dataset.waschecked === "true") : false,
-                    comidaExtra: 0
-                });
-        
-                // ✔ CORRECTO: leer el estado REAL del radio
-                if (radio && radio.dataset.waschecked === "true") {
-                    indiceComida = idx;
-                }
-            });
-        
-            // Resetear comidaExtra en todas
-            nuevasDirecciones.forEach(d => d.comidaExtra = 0);
-        
-        // Si hay comida marcada, asignar 60 min a la MISMA dirección
-        if (indiceComida !== -1) {
-            nuevasDirecciones[indiceComida].comidaExtra = 60;
-        }
-
-        
-            // Llamar al cálculo con la lista ya corregida
-            calcularDistanciasDesdeValencina(nuevasDirecciones);
-        });
-
-
-    // Exportar
-    document.getElementById("btn-exportar").addEventListener("click", () => {
-    const inputs = document.querySelectorAll(".direccion-editable");
-
-    // Leer direcciones en el orden actual
-    const direcciones = Array.from(inputs).map(input => input.value.trim());
-
-    if (direcciones.length === 0) {
-        mostrarMensaje("No hay direcciones para exportar", "advertencia");
-        return;
-    }
-
-    // Construir URL de Google Maps
-    const origen = encodeURIComponent(ORIGEN_FIJO);
-    const waypoints = direcciones.map(d => encodeURIComponent(d)).join("/");
-
-    const url = `https://www.google.com/maps/dir/${origen}/${waypoints}/${origen}`;
-
-    // Abrir en nueva pestaña
-    window.open(url, "_blank");
-});
-
-    // --- BOTÓN AÑADIR DIRECCIÓN ---
-document.getElementById("btn-anadir").addEventListener("click", () => {
-    const lista = document.getElementById("lista-direcciones");
-
-    const nuevoLi = document.createElement("li");
-    nuevoLi.innerHTML = `
-        <strong>+</strong>
-        <input type="text" class="direccion-editable" value="" placeholder="Nueva dirección..." style="width: 90%; margin-bottom: 5px;"><br>
-    `;
-
-    lista.appendChild(nuevoLi);
-});
-
-
-// --- ELIMINAR DIRECCIÓN INDIVIDUAL ---
-document.addEventListener("click", (e) => {
-    if (e.target.classList.contains("btn-eliminar")) {
-        const li = e.target.closest("li");
-        if (li) {
-            li.remove();
-        }
-    }
-});
-
-    // --- PREVISIÓN DEL TIEMPO ---
-document.getElementById("btn-clima").addEventListener("click", async () => {
-    const fecha = document.getElementById("fecha-clima").value;
-    const div = document.getElementById("resultado-clima");
-
-    if (!fecha) {
-        div.innerHTML = "<div style='color:red;'>Selecciona una fecha.</div>";
-        return;
-    }
-
-    div.innerHTML = "⏳ Consultando previsión del tiempo...";
-
-    // Coordenadas de las ciudades
-    const ciudades = [
-        { nombre: "Sevilla", lat: 37.3891, lon: -5.9845 },
-        { nombre: "Cádiz", lat: 36.5271, lon: -6.2886 },
-        { nombre: "Huelva", lat: 37.2614, lon: -6.9447 },
-        { nombre: "Córdoba", lat: 37.8882, lon: -4.7794 },
-        { nombre: "Málaga", lat: 36.7213, lon: -4.4214 }
-    ];
-
-    let html = `<h3>Previsión para el ${fecha}</h3>`;
-
-    for (const ciudad of ciudades) {
-       const url = `https://api.open-meteo.com/v1/forecast?latitude=${ciudad.lat}&longitude=${ciudad.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe/Madrid&start_date=${fecha}&end_date=${fecha}`;
-
-
-        try {
-            const resp = await fetch(url);
-            const data = await resp.json();
-
-            const code = data.daily.weathercode[0];
-            const icono = iconoClima(code);
-
-            const tmax = data.daily.temperature_2m_max[0];
-            const tmin = data.daily.temperature_2m_min[0];
-            const lluvia = data.daily.precipitation_probability_max[0];
-
-        html += `
-            <div class="tarjeta-clima">
-                <strong>${ciudad.nombre}</strong><br>
-                ${icono}<br>
-                🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
-                🌧️ Probabilidad de lluvia: ${lluvia}%
-            </div>
-        `;
-
-        } catch (e) {
-            html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
-        }
-    }
-
-    div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
-
-});
-
-        </script>
+</script>
         <!-- ARRASTRAR Y SOLTAR -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
 
@@ -1233,6 +1049,44 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
+                   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
+        
+        document.getElementById("clasificarBtn").addEventListener("click", async () => {
+          const fileInput = document.getElementById("fotoCubierta");
+          const file = fileInput.files[0];
+        
+          if (!file) {
+            alert("Selecciona una imagen primero");
+            return;
+          }
+        
+          const formData = new FormData();
+          formData.append("file", file);
+        
+          try {
+            const res = await fetch(
+              "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+              {
+                method: "POST",
+                body: formData
+              }
+            );
+        
+            const data = await res.json();
+        
+            console.log("Respuesta Roboflow:", data);
+        
+            const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
+        
+            document.getElementById("resultadoCubierta").textContent =
+              "Tipo de cubierta: " + prediccion;
+        
+          } catch (error) {
+            console.error("Error al clasificar:", error);
+            document.getElementById("resultadoCubierta").textContent =
+              "Error al clasificar la imagen.";
+          }
+        });
 </script>
 
 
