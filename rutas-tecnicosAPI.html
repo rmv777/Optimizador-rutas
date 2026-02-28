@@ -375,9 +375,6 @@ async function procesarImagenOCR(event) {
             { logger: m => console.log(m) }
         );
 
-        // Ocultar indicador
-        document.getElementById("ocr-loading").style.display = "none";
-
         const texto = resultado.data.text;
 
         const lineas = texto
@@ -387,16 +384,21 @@ async function procesarImagenOCR(event) {
 
         if (lineas.length === 0) {
             mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
+            document.getElementById("ocr-loading").style.display = "none";
             return;
         }
 
+        // 1) Pintar lista principal
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
-        
-        // 2) Añadir clasificación de cubiertas  
+
+        // 2) Clasificar cubiertas (CORRECTO)
         await procesarDireccionesOCR(texto);
-            
+
+        // 3) Ocultar indicador al final
+        document.getElementById("ocr-loading").style.display = "none";
+
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
@@ -405,6 +407,7 @@ async function procesarImagenOCR(event) {
         document.getElementById("ocr-loading").style.display = "none";
     }
 }
+
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
