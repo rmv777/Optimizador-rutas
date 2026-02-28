@@ -443,7 +443,7 @@ async function procesarDireccionesOCR(textoOCR) {
 
         try {
             // Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
@@ -452,7 +452,7 @@ async function procesarDireccionesOCR(textoOCR) {
             formData.append("file", blob, "map.jpg");
 
             const res = await fetch(
-                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=TU_API_KEY",
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
                 { method: "POST", body: formData }
             );
 
