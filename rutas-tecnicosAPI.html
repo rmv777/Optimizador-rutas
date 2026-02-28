@@ -423,10 +423,15 @@ async function procesarImagenOCR(event) {
     }
 }
 
+
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
 
 async function procesarDireccionesOCR(textoOCR) {
+
+        // Esperar a que la lista esté pintada
+        await new Promise(r => setTimeout(r, 300));
+
     const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
     for (const direccionOCR of lineas) {
