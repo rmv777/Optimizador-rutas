@@ -394,8 +394,8 @@ async function procesarImagenOCR(event) {
             lineas.map(d => ({ direccion: d }))
         );
         
-        // 2) Añadir clasificación de cubiertas (NUEVO) 
-        procesarDireccionesOCR(texto);
+        // 2) Añadir clasificación de cubiertas  
+        await procesarDireccionesOCR(textoOCR);
             
     } catch (error) {
         console.error("Error OCR:", error);
@@ -997,119 +997,162 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
 });
 
 
-
-</script>
-        <!-- ARRASTRAR Y SOLTAR -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
-
-<script>
-new Sortable(document.getElementById("lista-direcciones"), {
-    animation: 150,
-    onEnd: function () {
-        console.log("Nuevo orden manual aplicado");
-    }
-});
-</script>
-        
-<script>
-document.addEventListener("click", function(e) {
-    if (!e.target.classList.contains("radio-comida")) return;
-
-    const yaMarcado = e.target.checked && e.target.dataset.waschecked === "true";
-
-    // Resetear estado previo de todos
-    document.querySelectorAll(".radio-comida").forEach(r => {
-        r.dataset.waschecked = "false";
-    });
-
-    if (yaMarcado) {
-        e.target.checked = false;
-        e.target.dataset.waschecked = "false";
-    } else {
-        e.target.checked = true;
-        e.target.dataset.waschecked = "true";
-    }
-});
-
-        document.getElementById("btnWhatsappRuta").addEventListener("click", function () {
-
-    // Obtener todas las direcciones en orden
-    const items = document.querySelectorAll("#lista-direcciones li");
-    if (items.length === 0) {
-        alert("No hay direcciones para enviar.");
-        return;
-    }
-
-    let partes = [];
-
-    items.forEach(li => {
-        const input = li.querySelector(".direccion-editable");
-        if (!input) return;
-
-        const direccion = input.value.trim();
-        if (direccion !== "") {
-            partes.push(encodeURIComponent(direccion));
-        }
-    });
-
-    if (partes.length < 2) {
-        alert("Se necesitan al menos dos direcciones para crear una ruta.");
-        return;
-    }
-
-    // MISMO ENLACE QUE EL BOTÓN DE EXPORTAR
-    const urlRuta = "https://www.google.com/maps/dir/" + partes.join("/");
-
-    // Preparar mensaje para WhatsApp
-    const mensaje = "🗺️ Ruta completa del día:\n" + urlRuta;
-
-    // Abrir WhatsApp con el mensaje
-    const urlWhatsapp = "https://wa.me/?text=" + encodeURIComponent(mensaje);
-    window.open(urlWhatsapp, "_blank");
-});
-
-                   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
-        
-        document.getElementById("clasificarBtn").addEventListener("click", async () => {
-          const fileInput = document.getElementById("fotoCubierta");
-          const file = fileInput.files[0];
-        
-          if (!file) {
-            alert("Selecciona una imagen primero");
-            return;
-          }
-        
-          const formData = new FormData();
-          formData.append("file", file);
-        
-          try {
-            const res = await fetch(
-              "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
-              {
-                method: "POST",
-                body: formData
-              }
-            );
-        
-            const data = await res.json();
-        
-            console.log("Respuesta Roboflow:", data);
-        
-            const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
-        
-            document.getElementById("resultadoCubierta").textContent =
-              "Tipo de cubierta: " + prediccion;
-        
-          } catch (error) {
-            console.error("Error al clasificar:", error);
-            document.getElementById("resultadoCubierta").textContent =
-              "Error al clasificar la imagen.";
-          }
+  // Geocodificar Valencina
+    await new Promise((resolve) => {
+        geocoder.geocode({ address: ORIGEN_FIJO }, (results, status) => {
+            if (status === "OK" && results[0]) {
+                const origen = results[0].geometry.location;
+                coordenadasRuta.unshift(origen);
+                coordenadasRuta.push(origen);
+                bounds.extend(origen);
+                dibujarRutaCompleta(coordenadasRuta);
+            }
+            resolve();
         });
-</script>
+    });
+
+    map.fitBounds(bounds);
+}
+
+    // Recalcular
+        document.getElementById("btn-recalcular").addEventListener("click", () => {
+            const items = document.querySelectorAll("#lista-direcciones li");
+        
+            const nuevasDirecciones = [];
+            let indiceComida = -1;
+        
+            items.forEach((li, idx) => {
+                const dirInput = li.querySelector(".direccion-editable");
+                const minInput = li.querySelector(".tiempo-extra");
+                const radio = li.querySelector(".radio-comida");
+        
+                if (!dirInput) return;
+        
+                nuevasDirecciones.push({
+                    direccion: dirInput.value.trim(),
+                    minutos: parseInt(minInput.value) || 0,
+                    comida: radio ? (radio.dataset.waschecked === "true") : false,
+                    comidaExtra: 0
+                });
+        
+                // ✔ CORRECTO: leer el estado REAL del radio
+                if (radio && radio.dataset.waschecked === "true") {
+                    indiceComida = idx;
+                }
+            });
+        
+            // Resetear comidaExtra en todas
+            nuevasDirecciones.forEach(d => d.comidaExtra = 0);
+        
+        // Si hay comida marcada, asignar 60 min a la MISMA dirección
+        if (indiceComida !== -1) {
+            nuevasDirecciones[indiceComida].comidaExtra = 60;
+        }
+
+        
+            // Llamar al cálculo con la lista ya corregida
+            calcularDistanciasDesdeValencina(nuevasDirecciones);
+        });
 
 
-</div>
+    // Exportar
+    document.getElementById("btn-exportar").addEventListener("click", () => {
+    const inputs = document.querySelectorAll(".direccion-editable");
 
-</body>
-</html>
+    // Leer direcciones en el orden actual
+    const direcciones = Array.from(inputs).map(input => input.value.trim());
+
+    if (direcciones.length === 0) {
+        mostrarMensaje("No hay direcciones para exportar", "advertencia");
+        return;
+    }
+
+    // Construir URL de Google Maps
+    const origen = encodeURIComponent(ORIGEN_FIJO);
+    const waypoints = direcciones.map(d => encodeURIComponent(d)).join("/");
+
+    const url = `https://www.google.com/maps/dir/${origen}/${waypoints}/${origen}`;
+
+    // Abrir en nueva pestaña
+    window.open(url, "_blank");
+});
+
+    // --- BOTÓN AÑADIR DIRECCIÓN ---
+document.getElementById("btn-anadir").addEventListener("click", () => {
+    const lista = document.getElementById("lista-direcciones");
+
+    const nuevoLi = document.createElement("li");
+    nuevoLi.innerHTML = `
+        <strong>+</strong>
+        <input type="text" class="direccion-editable" value="" placeholder="Nueva dirección..." style="width: 90%; margin-bottom: 5px;"><br>
+    `;
+
+    lista.appendChild(nuevoLi);
+});
+
+
+// --- ELIMINAR DIRECCIÓN INDIVIDUAL ---
+document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("btn-eliminar")) {
+        const li = e.target.closest("li");
+        if (li) {
+            li.remove();
+        }
+    }
+});
+
+    // --- PREVISIÓN DEL TIEMPO ---
+document.getElementById("btn-clima").addEventListener("click", async () => {
+    const fecha = document.getElementById("fecha-clima").value;
+    const div = document.getElementById("resultado-clima");
+
+    if (!fecha) {
+        div.innerHTML = "<div style='color:red;'>Selecciona una fecha.</div>";
+        return;
+    }
+
+    div.innerHTML = "⏳ Consultando previsión del tiempo...";
+
+    // Coordenadas de las ciudades
+    const ciudades = [
+        { nombre: "Sevilla", lat: 37.3891, lon: -5.9845 },
+        { nombre: "Cádiz", lat: 36.5271, lon: -6.2886 },
+        { nombre: "Huelva", lat: 37.2614, lon: -6.9447 },
+        { nombre: "Córdoba", lat: 37.8882, lon: -4.7794 },
+        { nombre: "Málaga", lat: 36.7213, lon: -4.4214 }
+    ];
+
+    let html = `<h3>Previsión para el ${fecha}</h3>`;
+
+    for (const ciudad of ciudades) {
+       const url = `https://api.open-meteo.com/v1/forecast?latitude=${ciudad.lat}&longitude=${ciudad.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Europe/Madrid&start_date=${fecha}&end_date=${fecha}`;
+
+
+        try {
+            const resp = await fetch(url);
+            const data = await resp.json();
+
+            const code = data.daily.weathercode[0];
+            const icono = iconoClima(code);
+
+            const tmax = data.daily.temperature_2m_max[0];
+            const tmin = data.daily.temperature_2m_min[0];
+            const lluvia = data.daily.precipitation_probability_max[0];
+
+        html += `
+            <div class="tarjeta-clima">
+                <strong>${ciudad.nombre}</strong><br>
+                ${icono}<br>
+                🌡️ Máx: ${tmax}°C — Mín: ${tmin}°C<br>
+                🌧️ Probabilidad de lluvia: ${lluvia}%
+            </div>
+        `;
+
+        } catch (e) {
+            html += `<div style="color:red;">Error obteniendo datos para ${ciudad.nombre}</div>`;
+        }
+    }
+
+    div.innerHTML = `<div id="clima-contenedor">${html}</div>`;
+
+});
