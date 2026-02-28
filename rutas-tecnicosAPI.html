@@ -202,6 +202,12 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     align-items: center;
     gap: 6px;
 }
+.clima-horizontal {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap; /* Para que en móvil no se rompa */
+}
 
 </style>
 </head>
@@ -213,18 +219,24 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </header>
 
 <div class="contenedor-principal">
-        <div class="tarjeta">
-            <h2>🌦️ Previsión del tiempo</h2>
+         <div class="tarjeta">
         
-            <label for="fecha-clima" style="font-weight:600;">Seleccionar día:</label><br>
-            <input type="date" id="fecha-clima" style="margin-top:8px;">
+            <div class="clima-horizontal">
+                <h2 style="margin:0;">🌦️ Previsión del tiempo</h2>
         
-            <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-top:12px;">
-                📅 Ver previsión
-            </button>
+                <label for="fecha-clima" style="font-weight:600; margin-left:10px;">Seleccionar día:</label>
+        
+                <input type="date" id="fecha-clima" style="margin-left:10px;">
+        
+                <button id="btn-clima" class="boton-accion boton-recalcular" style="margin-left:10px;">
+                    📅 Ver previsión
+                </button>
+            </div>
         
             <div id="resultado-clima" style="margin-top:15px;"></div>
+        
         </div>
+
 
     <div class="tarjeta">
         <h2>📸 OCR — Cargar direcciones desde imagen</h2>
