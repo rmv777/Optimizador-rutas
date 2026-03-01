@@ -310,10 +310,6 @@ function sumarMinutosAHora(horaBase, minutosASumar) {
     }
 }
 
-</script>
-        
-<script>
-
 function formatearHoras(minutosTotales) {
     const horas = Math.floor(minutosTotales / 60);
     const minutos = minutosTotales % 60;
@@ -1035,22 +1031,17 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
 
 });
 
-
-
-</script>
         <!-- ARRASTRAR Y SOLTAR -->
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
+        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
 
-<script>
+
 new Sortable(document.getElementById("lista-direcciones"), {
     animation: 150,
     onEnd: function () {
         console.log("Nuevo orden manual aplicado");
     }
 });
-</script>
-        
-<script>
+
 document.addEventListener("click", function(e) {
     if (!e.target.classList.contains("radio-comida")) return;
 
@@ -1107,10 +1098,8 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
-</script>
-
 </div>
-<script>
+
 const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
 const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
@@ -1156,9 +1145,8 @@ function actualizarFilaDireccion(direccion, tipo) {
     const fila = document.querySelector(`[data-direccion="${direccion}"]`);
     if (fila) fila.querySelector(".tipo-cubierta").textContent = tipo;
 }
-</script>
-<script>
-        async function detectarCubiertaDesdeDireccion(direccionOCR) {
+
+async function detectarCubiertaDesdeDireccion(direccionOCR) {
     try {
         // 1. Obtener imagen aérea desde Google Maps
         const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
@@ -1218,9 +1206,8 @@ function actualizarFilaDireccion(direccion, tipo) {
         return "Error";
     }
 }
-</script>
-<script>
-        async function reclasificarCubiertasExistentes() {
+
+  async function reclasificarCubiertasExistentes() {
     const todosLi = document.querySelectorAll("#lista-direcciones li");
 
     for (const li of todosLi) {
@@ -1233,44 +1220,12 @@ function actualizarFilaDireccion(direccion, tipo) {
             .replace(/\s+/g, "_")
             .replace(/[^a-zA-Z0-9_]/g, "");
 
-        try {
-            // 1. Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=21&size=1024x1024&maptype=satellite&key=${GOOGLE_API_KEY}`;
-            const imgResponse = await fetch(urlMapa);
-                
-            if (!imgResponse.ok || imgResponse.headers.get("content-type").includes("text/html")) {
-            console.error("Google Maps devolvió HTML, no imagen");
-            continue;
-        }
+        const tipo = await detectarCubiertaDesdeDireccion(direccion);
 
-
-            // 2. Clasificar con Roboflow Hosted API
-            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-            const resRF = await fetch(urlRF, {
-                method: "POST",
-                headers: { "Content-Type": "application/octet-stream" },
-                body: arrayBuffer
-            });
-
-            const data = await resRF.json();
-
-            let tipo = "No detectado";
-            if (data.predictions && data.predictions.length > 0) {
-                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-                tipo = mejor.class;
-            }
-
-            // 3. Actualizar UI
-            const destino = document.getElementById(`cubierta-${idSeguro}`);
-            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
-
-        } catch (error) {
-            console.error("Error reclasificando:", direccion, error);
-        }
+        const destino = document.getElementById(`cubierta-${idSeguro}`);
+        if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
     }
 }
-</script>
-<script>
   
 function actualizarFilaDireccion(direccion, tipo) {
     const filas = document.querySelectorAll("table tbody tr");
@@ -1288,10 +1243,11 @@ function actualizarFilaDireccion(direccion, tipo) {
     }
 }
 
-</script>
-document.getElementById("btn-recalcular").addEventListener("click", async () => {
+    document.getElementById("btn-recalcular").addEventListener("click", async () => {
     await reclasificarCubiertasExistentes();
 });
+</script>
+
 
 </body>
 </html>
