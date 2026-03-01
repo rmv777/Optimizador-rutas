@@ -517,7 +517,7 @@ async function procesarDireccionesOCR(listaDirecciones) {
         
         try {
             // 1. Obtener imagen aérea desde Google Maps
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
             const imgResponse = await fetch(urlMapa);
             
             // --- VALIDACIÓN CRÍTICA ---
