@@ -229,12 +229,24 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 <body>
 
-<header class="header-app">
-        <h1>Optimizador de Rutas DANKESOL</h1>
-</header>
+    <!-- Contenedor global de mensajes -->
+    <div id="mensaje" style="
+        display:none;
+        padding:10px;
+        margin:10px;
+        border-radius:6px;
+        font-weight:bold;
+    "></div>
 
-<div class="contenedor-principal">
-         <div class="tarjeta">
+    <div class="container">
+
+        <header class="header-app">
+            <h1>Optimizador de Rutas DANKESOL</h1>
+        </header>
+
+        <div class="contenedor-principal">
+            <div class="tarjeta">
+                <!-- resto de tu contenido -->
         
             <div class="clima-horizontal">
                 <h2 style="margin:0;">🌦️ Previsión del tiempo</h2>
@@ -1303,6 +1315,6 @@ document.getElementById("recalcularBtn").addEventListener("click", async () => {
 
 </script>
 
-
+    </div>
 </body>
 </html>
