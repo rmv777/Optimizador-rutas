@@ -211,7 +211,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 }
 
 </style>
-        <script src="libs/inference.min.js" onload="cargarModeloCubiertas()"></script>
+
 </head>
 
 <body>
@@ -248,12 +248,8 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </div>
 
     </div>
-
-        <input type="file" id="fotoCubierta" accept="image/*">
-        <button id="clasificarBtn">Clasificar cubierta</button>
-        
+                
         <p id="resultadoCubierta"></p>
-
 
         <div style="margin:10px 0;">
     <label>
@@ -291,30 +287,6 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 </div>
         
-<script>
-let modeloCubiertas = null;
-let modeloListo = false;
-
-async function cargarModeloCubiertas() {
-  try {
-    if (typeof inference === "undefined") throw new Error("SDK Roboflow no cargado");
-    modeloCubiertas = await inference.loadModel({
-      model: "cubiertas-39jag",
-      version: 2,
-      apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
-    });
-    modeloListo = true;
-    console.log("Modelo cargado correctamente");
-  } catch (err) {
-    console.error("Error cargando modelo:", err);
-    modeloListo = false;
-  }
-}
-</script>
-
-
-
-
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
 
@@ -1120,36 +1092,6 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
-  // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
-        
-document.getElementById("clasificarBtn").addEventListener("click", async () => {
-
-    if (!modeloListo) {
-        alert("Cargando modelo, espera 1 segundo…");
-        return;
-    }
-
-    const fileInput = document.getElementById("fotoCubierta");
-    const file = fileInput.files[0];
-
-    if (!file) {
-        alert("Selecciona una imagen primero");
-        return;
-    }
-
-    const imgURL = URL.createObjectURL(file);
-    const img = new Image();
-    img.src = imgURL;
-    await new Promise(resolve => img.onload = resolve);
-
-    const pred = await modeloCubiertas.predict(img);
-
-    let tipo = "No detectado";
-    if (pred && pred.length > 0) tipo = pred[0].class;
-
-    document.getElementById("resultadoCubierta").textContent =
-        "Tipo de cubierta: " + tipo;
-});
 </script>
 
 </div>
