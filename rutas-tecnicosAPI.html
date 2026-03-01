@@ -360,7 +360,6 @@ async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
 
-    // Mostrar indicador de carga
     document.getElementById("ocr-loading").style.display = "block";
 
     try {
@@ -370,7 +369,6 @@ async function procesarImagenOCR(event) {
             { logger: m => console.log(m) }
         );
 
-        // Ocultar indicador
         document.getElementById("ocr-loading").style.display = "none";
 
         const texto = resultado.data.text;
@@ -385,23 +383,23 @@ async function procesarImagenOCR(event) {
             return;
         }
 
+        // 1) Añadir direcciones a la lista y calcular distancias
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
 
-         await new Promise(r => setTimeout(r, 300));
-   
-        // 2) Añadir clasificación de cubiertas (NUEVO) 
-        procesarDireccionesOCR(texto);
-            
+        // 2) Clasificar cubiertas SOLO para esas direcciones
+        for (const direccion of lineas) {
+            await detectarCubiertaDesdeDireccion(direccion);
+        }
+
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
-
-        // Ocultar indicador si hay error
         document.getElementById("ocr-loading").style.display = "none";
     }
 }
+
 
 
 // === FUNCIONES DE UTILIDAD ===
