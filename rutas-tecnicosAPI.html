@@ -289,28 +289,24 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 </div>
 
-<script src="https://unpkg.com/@roboflow/inference@latest/dist/inference.min.js">
-        onload="cargarModeloCubiertas()"></script>
+<script src="https://unpkg.com/@roboflow/inference@latest/dist/inference.min.js"></script>
 
 <script>
 let modeloCubiertas = null;
 let modeloListo = false;
 
 async function cargarModeloCubiertas() {
-    if (typeof inference === "undefined") {
-        console.error("Roboflow inference.js no se ha cargado");
-        return;
-    }
-
     modeloCubiertas = await inference.loadModel({
         model: "cubiertas-39jag",
         version: 2,
         apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
     });
-
     modeloListo = true;
 }
+
+cargarModeloCubiertas();
 </script>
+
 
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
