@@ -287,26 +287,33 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     <div id="map"></div>
 </div>
 
-
 </div>
 
-<script src="https://unpkg.com/@roboflow/inference@latest/dist/inference.min.js"></script>
+<script src="https://unpkg.com/@roboflow/inference@latest/dist/inference.min.js"
+        onload="cargarModeloCubiertas()"></script>
 
 <script>
 let modeloCubiertas = null;
 let modeloListo = false;
 
 async function cargarModeloCubiertas() {
+  try {
+    if (typeof inference === "undefined") throw new Error("SDK Roboflow no cargado");
     modeloCubiertas = await inference.loadModel({
-        model: "cubiertas-39jag",
-        version: 2,
-        apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
+      model: "cubiertas-39jag",
+      version: 2,
+      apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
     });
     modeloListo = true;
+    console.log("Modelo cargado correctamente");
+  } catch (err) {
+    console.error("Error cargando modelo:", err);
+    modeloListo = false;
+  }
 }
-
-document.addEventListener("DOMContentLoaded", cargarModeloCubiertas);
 </script>
+
+
 
 
 <!-- GOOGLE MAPS -->
