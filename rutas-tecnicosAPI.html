@@ -403,7 +403,11 @@ async function procesarImagenOCR(event) {
         }
 
         calcularDistanciasDesdeValencina(
-            lineas.map(d => ({ direccion: d }))
+           lineas.map(d => ({
+              direccion: d,
+              lat: resultadoGeocoding[d].lat,
+              lon: resultadoGeocoding[d].lon
+          }))
         );
 
          await new Promise(r => setTimeout(r, 300));
