@@ -277,6 +277,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <button id="btnWhatsappRuta" class="boton-accion" style="background:#25D366;">
             💬 Enviar ruta por WhatsApp
         </button>
+        <button onclick="procesarDirecciones()">Detectar tipo de cubierta</button>
 
     </div>
 
@@ -453,10 +454,13 @@ function normalizarDireccion(str) {
 
 async function procesarDireccionesOCR(textoOCR) {
 
-        // Esperar a que la lista esté pintada
-        await new Promise(r => setTimeout(r, 300));
+    // Esperar a que la lista esté pintada
+    await new Promise(r => setTimeout(r, 300));
 
-    const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+    const lineas = textoOCR
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
 
     for (const direccionOCR of lineas) {
 
@@ -489,27 +493,28 @@ async function procesarDireccionesOCR(textoOCR) {
             .replace(/[^a-zA-Z0-9_]/g, "");
 
         try {
-            // 1. Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
+            // 1. Obtener imagen aérea desde Google Maps
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
             const imgResponse = await fetch(urlMapa);
-            const blob = await imgResponse.blob();
+            const arrayBuffer = await imgResponse.arrayBuffer();
 
-            // 2. Crear <img> para inference.js
-            const imgURL = URL.createObjectURL(blob);
-            const img = new Image();
-            img.src = imgURL;
+            // 2. Clasificar con Roboflow Hosted API
+            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
+            const resRF = await fetch(urlRF, {
+                method: "POST",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: arrayBuffer
+            });
 
-            await new Promise(resolve => img.onload = resolve);
-
-            // 3. Clasificar con inference.js
-            const pred = await modeloCubiertas.predict(img);
+            const data = await resRF.json();
 
             let tipo = "No detectado";
-            if (pred && pred.length > 0) {
-                tipo = pred[0].class;
+            if (data.predictions && data.predictions.length > 0) {
+                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
+                tipo = mejor.class;
             }
 
-            // 4. Actualizar el <p>
+            // 3. Actualizar el <p> correspondiente
             const destino = document.getElementById(`cubierta-${idSeguro}`);
             if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
 
@@ -1148,6 +1153,93 @@ document.getElementById("clasificarBtn").addEventListener("click", async () => {
 </script>
 
 </div>
+<script>
+const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
+const ROBOFLOW_API_KEY = "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503";
+
+// Esta función debe devolver tu lista de direcciones OCR
+// Adáptala a tu estructura real
+function obtenerDireccionesOCR() {
+    return direccionesOCR; // tu array real
+}
+
+async function procesarDirecciones() {
+    const direcciones = obtenerDireccionesOCR();
+
+    for (const direccion of direcciones) {
+        try {
+            const imagen = await obtenerImagenAerea(direccion);
+            const tipoCubierta = await detectarCubierta(imagen);
+
+            console.log(direccion, "→", tipoCubierta);
+
+            // Aquí actualizas tu UI o tabla
+            actualizarFilaDireccion(direccion, tipoCubierta);
+
+        } catch (err) {
+            console.error("Error con", direccion, err);
+        }
+    }
+}
+
+// 1) Obtener imagen aérea desde Google Maps Static API
+async function obtenerImagenAerea(direccion) {
+    const url = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("No se pudo obtener la imagen aérea");
+
+    return await res.arrayBuffer(); // devolvemos la imagen como binario
+}
+
+// 2) Enviar imagen a Roboflow Hosted API
+async function detectarCubierta(imagenArrayBuffer) {
+    const url = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
+
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: imagenArrayBuffer
+    });
+
+    const data = await res.json();
+
+    if (!data.predictions || data.predictions.length === 0) {
+        return "Sin detección";
+    }
+
+    // Tomamos la predicción con mayor confianza
+    const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
+
+    return mejor.class; // "teja" o "cubierta_plana"
+}
+
+// 3) Actualizar UI (adáptalo a tu tabla real)
+function actualizarFilaDireccion(direccion, tipo) {
+    // Ejemplo:
+    const fila = document.querySelector(`[data-direccion="${direccion}"]`);
+    if (fila) fila.querySelector(".tipo-cubierta").textContent = tipo;
+}
+</script>
+<script>
+  
+function actualizarFilaDireccion(direccion, tipo) {
+    const filas = document.querySelectorAll("table tbody tr");
+
+    for (const fila of filas) {
+        const celdaDireccion = fila.querySelector(".direccion");
+
+        if (celdaDireccion && celdaDireccion.textContent.trim() === direccion.trim()) {
+            const celdaTipo = fila.querySelector(".tipo-cubierta");
+            if (celdaTipo) {
+                celdaTipo.textContent = tipo;
+            }
+            break;
+        }
+    }
+}
+
+</script>
 
 </body>
 </html>
