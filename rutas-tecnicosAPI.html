@@ -289,10 +289,10 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 </div>
 
-<script src="https://cdn.roboflow.com/inference/inference-latest.js"></script>
-        
+<script src="https://cdn.roboflow.com/inference/inference-latest.js"></script>        
 <script>
 let modeloCubiertas = null;
+let modeloListo = false;
 
 async function cargarModeloCubiertas() {
     modeloCubiertas = await inference.loadModel({
@@ -300,10 +300,12 @@ async function cargarModeloCubiertas() {
         version: 2,
         apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
     });
+    modeloListo = true;
 }
 
 cargarModeloCubiertas();
 </script>
+
 
 
 <!-- GOOGLE MAPS -->
@@ -1110,6 +1112,12 @@ document.addEventListener("click", function(e) {
   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
         
 document.getElementById("clasificarBtn").addEventListener("click", async () => {
+
+    if (!modeloListo) {
+        alert("Cargando modelo, espera 1 segundo…");
+        return;
+    }
+
     const fileInput = document.getElementById("fotoCubierta");
     const file = fileInput.files[0];
 
@@ -1118,29 +1126,20 @@ document.getElementById("clasificarBtn").addEventListener("click", async () => {
         return;
     }
 
-    // Crear URL temporal para cargar la imagen
     const imgURL = URL.createObjectURL(file);
     const img = new Image();
     img.src = imgURL;
-
-    // Esperar a que cargue
     await new Promise(resolve => img.onload = resolve);
 
-    // Ejecutar inferencia en el navegador
     const pred = await modeloCubiertas.predict(img);
 
     let tipo = "No detectado";
-    if (pred && pred.length > 0) {
-        tipo = pred[0].class;
-    }
+    if (pred && pred.length > 0) tipo = pred[0].class;
 
     document.getElementById("resultadoCubierta").textContent =
         "Tipo de cubierta: " + tipo;
 });
-
-
 </script>
-
 
 </div>
 
