@@ -463,13 +463,27 @@ async function procesarDireccionesOCR(textoOCR) {
             .querySelector(".direccion-editable")
             .value.replace(/\s+/g, "_")
             .replace(/[^a-zA-Z0-9_]/g, "");
-
+        
         try {
             // 1. Obtener imagen aérea desde Google Maps
             const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
             const imgResponse = await fetch(urlMapa);
+        
+            // --- VALIDACIÓN CRÍTICA ---
+            if (!imgResponse.ok) {
+                console.error("Google Maps devolvió un error HTTP:", imgResponse.status);
+                continue;
+            }
+        
+            const contentType = imgResponse.headers.get("content-type") || "";
+            if (!contentType.startsWith("image/")) {
+                console.error("Google Maps devolvió HTML en vez de imagen. No se puede clasificar.");
+                continue;
+            }
+            // ---------------------------
+        
             const arrayBuffer = await imgResponse.arrayBuffer();
-
+        
             // 2. Clasificar con Roboflow Hosted API
             const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
             const resRF = await fetch(urlRF, {
@@ -477,8 +491,9 @@ async function procesarDireccionesOCR(textoOCR) {
                 headers: { "Content-Type": "application/octet-stream" },
                 body: arrayBuffer
             });
-
+        
             const data = await resRF.json();
+
 
             let tipo = "No detectado";
             if (data.predictions && data.predictions.length > 0) {
