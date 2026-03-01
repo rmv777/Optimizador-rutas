@@ -1,25 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="icon" href="data:,">
 <meta charset="UTF-8">
 <title>Optimizador de Rutas DANKESOL</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-.spinner-cubierta {
-  width: 14px;
-  height: 14px;
-  border: 2px solid #ccc;
-  border-top: 2px solid #3498db;
-  border-radius: 50%;
-  animation: spinCubierta 0.8s linear infinite;
-}
-
-@keyframes spinCubierta {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
 
         .alerta-km {
     color: red;
@@ -224,29 +210,16 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 }
 
 </style>
-
 </head>
 
 <body>
 
-    <!-- Contenedor global de mensajes -->
-    <div id="mensaje" style="
-        display:none;
-        padding:10px;
-        margin:10px;
-        border-radius:6px;
-        font-weight:bold;
-    "></div>
+<header class="header-app">
+        <h1>Optimizador de Rutas DANKESOL</h1>
+</header>
 
-    <div class="container">
-
-        <header class="header-app">
-            <h1>Optimizador de Rutas DANKESOL</h1>
-        </header>
-
-        <div class="contenedor-principal">
-            <div class="tarjeta">
-                <!-- resto de tu contenido -->
+<div class="contenedor-principal">
+         <div class="tarjeta">
         
             <div class="clima-horizontal">
                 <h2 style="margin:0;">🌦️ Previsión del tiempo</h2>
@@ -273,8 +246,12 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </div>
 
     </div>
-                
+
+        <input type="file" id="fotoCubierta" accept="image/*">
+        <button id="clasificarBtn">Clasificar cubierta</button>
+        
         <p id="resultadoCubierta"></p>
+
 
         <div style="margin:10px 0;">
     <label>
@@ -298,21 +275,19 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <button id="btnWhatsappRuta" class="boton-accion" style="background:#25D366;">
             💬 Enviar ruta por WhatsApp
         </button>
-        <button id="recalcularBtn" class="btn btn-primary">Recalcular cubiertas</button>
-        <button onclick="procesarDirecciones()">Detectar tipo de cubierta</button>
 
     </div>
 
     <ul id="lista-direcciones"></ul>
-        
 </div>
 <div class="tarjeta">
     <h2>🗺️ Mapa de la ruta</h2>
     <div id="map"></div>
 </div>
 
+
 </div>
-        
+    
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
 
@@ -389,124 +364,98 @@ async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
 
-    const imagen = URL.createObjectURL(archivo);
+    // Mostrar indicador de carga
+    document.getElementById("ocr-loading").style.display = "block";
 
-    const resultado = await Tesseract.recognize(imagen, "spa", {
-        logger: m => console.log(m)
-    });
+    try {
+        const resultado = await Tesseract.recognize(
+            archivo,
+            'spa',
+            { logger: m => console.log(m) }
+        );
 
-    const texto = resultado.data.text;
+        // Ocultar indicador
+        document.getElementById("ocr-loading").style.display = "none";
 
-    // 1. Normalizar caracteres invisibles y saltos raros del OCR
-    const limpio = texto
-        .replace(/\r\n/g, "\n")
-        .replace(/\r/g, "\n")
-        .replace(/\u00A0/g, " ")
-        .replace(/[^\S\n]+/g, " ")
-        .trim();
+        const texto = resultado.data.text;
 
-    // 2. Dividir en líneas limpias
-    const lineas = limpio
-        .split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
+        const lineas = texto
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
 
-    console.log("Líneas OCR detectadas:", lineas);
+        if (lineas.length === 0) {
+            mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
+            return;
+        }
 
-    // 3. Mostrar direcciones en la lista (editable)
-    mostrarDirecciones(lineas);
-}
+        calcularDistanciasDesdeValencina(
+            lineas.map(d => ({ direccion: d }))
+        );
+        
+        // 2) Añadir clasificación de cubiertas (NUEVO) 
+        procesarDireccionesOCR(texto);
+            
+    } catch (error) {
+        console.error("Error OCR:", error);
+        mostrarMensaje("Error procesando la imagen", "advertencia");
 
-
-
-// === FUNCIONES DE UTILIDAD ===
-
-function normalizarDireccion(str) {
-    let dir = str.trim();
-
-    const provincias = [
-        "A Coruña","Álava","Albacete","Alicante","Almería","Asturias","Ávila",
-        "Badajoz","Barcelona","Burgos","Cáceres","Cádiz","Cantabria","Castellón",
-        "Ciudad Real","Córdoba","Cuenca","Girona","Granada","Guadalajara","Guipúzcoa",
-        "Huelva","Huesca","Islas Baleares","Jaén","La Rioja","Las Palmas","León",
-        "Lleida","Lugo","Madrid","Málaga","Murcia","Navarra","Ourense","Palencia",
-        "Pontevedra","Salamanca","Santa Cruz de Tenerife","Segovia","Sevilla",
-        "Soria","Tarragona","Teruel","Toledo","Valencia","Valladolid","Vizcaya",
-        "Zamora","Zaragoza"
-    ];
-
-    const sinAcentos = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    for (const prov of provincias) {
-        const provSin = sinAcentos(prov);
-        const regex = new RegExp(`\\b${provSin}\\b[ ,]+${provSin}\\b`, "gi");
-        dir = sinAcentos(dir).replace(regex, prov);
+        // Ocultar indicador si hay error
+        document.getElementById("ocr-loading").style.display = "none";
     }
-
-    dir = dir.replace(/(\d+)\s+(\d+)/g, "$1"); // evitar 13 9
-    dir = dir.replace(/\s+/g, " ");
-
-    if (!/España/i.test(dir)) dir += ", España";
-
-    return dir.trim();
 }
-
- 
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
 
-async function procesarDireccionesOCR(direccionesConCoordenadas) {
-    const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
-    const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
-    const ROBOFLOW_MODEL = "roof-type-classifier/1"; // Ajusta si tu modelo es otro
+async function procesarDireccionesOCR(textoOCR) {
+    const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    const lista = document.getElementById("lista-direcciones");
+    const contenedor = document.getElementById("listaDirecciones");
+    contenedor.innerHTML = ""; // limpiar lista anterior
 
-    for (const item of direccionesConCoordenadas) {
-        const direccion = item.direccion;
-        const lat = item.lat;
-        const lon = item.lon;
-
-        // 1. Generar imagen satélite con Google Static Maps
-        const staticMapURL =
-            `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}` +
-            `&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
-
-        // Descargar imagen como blob
-        const imgRes = await fetch(staticMapURL);
-        const imgBlob = await imgRes.blob();
-
-        // 2. Enviar imagen a Roboflow
-        const formData = new FormData();
-        formData.append("file", imgBlob, "roof.jpg");
-
-        const roboflowURL =
-            `https://detect.roboflow.com/${ROBOFLOW_MODEL}?api_key=${ROBOFLOW_API_KEY}`;
-
-        const rfRes = await fetch(roboflowURL, {
-            method: "POST",
-            body: formData
-        });
-
-        const rfData = await rfRes.json();
-
-        // 3. Interpretar resultado de Roboflow
-        let tipoCubierta = "Desconocido";
-
-        if (rfData && rfData.predictions && rfData.predictions.length > 0) {
-            const pred = rfData.predictions[0];
-            tipoCubierta = pred.class || "Desconocido";
-        }
-
-        // 4. Actualizar la tabla HTML
-        const li = document.createElement("li");
-        li.innerHTML = `
-            <strong>${direccion}</strong><br>
-            <img src="${staticMapURL}" width="200"><br>
-            Cubierta: <strong>${tipoCubierta}</strong>
+    for (const direccion of lineas) {
+        const item = document.createElement("div");
+        item.className = "direccion-item";
+        item.innerHTML = `
+            <p><strong>${direccion}</strong></p>
+            <p id="estado-${direccion}">Obteniendo imagen aérea...</p>
         `;
-        lista.appendChild(li);
+        contenedor.appendChild(item);
+
+        try {
+            // === 1) Obtener imagen aérea de Google Maps ===
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
+
+            const imgResponse = await fetch(urlMapa);
+            const blob = await imgResponse.blob();
+
+            document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
+
+            // === 2) Enviar imagen a Roboflow ===
+            const formData = new FormData();
+            formData.append("file", blob, "map.jpg");
+
+            const res = await fetch(
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+            const data = await res.json();
+            const tipo = data?.predictions?.[0]?.class || "No detectado";
+
+            // === 3) Mostrar resultado ===
+            document.getElementById(`estado-${direccion}`).innerHTML =
+                `Cubierta detectada: <strong>${tipo}</strong>`;
+
+        } catch (error) {
+            console.error("Error procesando dirección:", direccion, error);
+            document.getElementById(`estado-${direccion}`).textContent =
+                "Error al obtener o clasificar la imagen.";
+        }
     }
 }
 
@@ -689,45 +638,37 @@ if (i < paradas.length - 1) {
     // Símbolo de prohibido si distancia > 40 km
     const simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683;" : "";
 
-let html = `
-    <strong>${i}.</strong> 
-    <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
-        ${simboloProhibido}
-    </span>
+    let html = `
+        <strong>${i}.</strong> 
+        <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
+            ${simboloProhibido}
+        </span>
 
-    <input type="text" class="direccion-editable" 
-           value="${item.direccion}" 
-           style="width: 70%; margin-bottom: 5px;">
+        <input type="text" class="direccion-editable" 
+               value="${item.direccion}" 
+               style="width: 70%; margin-bottom: 5px;">
 
-    <button class="btn-eliminar" 
-            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-        X
-    </button>
+        <button class="btn-eliminar" 
+                style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+            X
+        </button>
 
-    <input type="number" class="tiempo-extra" 
-           value="${item.minutos ?? 60}" 
-           min="0" 
-           style="width:44px; margin-left:10px;"> min
+        <input type="number" class="tiempo-extra" 
+               value="${item.minutos ?? 60}" 
+               min="0" 
+               style="width:44px; margin-left:10px;"> min
 
-    <div class="comida-wrapper" style="margin-left:10px;">
-        <input type="radio"
-               name="comida"
-               class="radio-comida"
-               data-waschecked="${item.comida ? "true" : "false"}"
-               ${item.comida ? "checked" : ""}>
-        <span>Lunch</span>
-    </div>
+        <div class="comida-wrapper" style="margin-left:10px;">
+            <input type="radio"
+                   name="comida"
+                   class="radio-comida"
+                   data-waschecked="${item.comida ? "true" : "false"}"
+                   ${item.comida ? "checked" : ""}>
+            <span>Lunch</span>
+        </div>
 
-    <br>
-
-<p class="tipo-cubierta" 
-   id="cubierta-${item.direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}"
-   style="margin:4px 0; font-size:14px; color:#333; display:flex; align-items:center; gap:6px;">
-   Detectando cubierta...
-   <span class="spinner-cubierta"></span>
-</p>
-`;
-
+        <br>
+    `;
 
     if (i === 1) {
         html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
@@ -1108,200 +1049,48 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
+                   // === CLASIFICACIÓN DE CUBIERTAS (ROBOFLOW) ===
+        
+        document.getElementById("clasificarBtn").addEventListener("click", async () => {
+          const fileInput = document.getElementById("fotoCubierta");
+          const file = fileInput.files[0];
+        
+          if (!file) {
+            alert("Selecciona una imagen primero");
+            return;
+          }
+        
+          const formData = new FormData();
+          formData.append("file", file);
+        
+          try {
+            const res = await fetch(
+              "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
+              {
+                method: "POST",
+                body: formData
+              }
+            );
+        
+            const data = await res.json();
+        
+            console.log("Respuesta Roboflow:", data);
+        
+            const prediccion = data?.predictions?.[0]?.class || "Sin resultado";
+        
+            document.getElementById("resultadoCubierta").textContent =
+              "Tipo de cubierta: " + prediccion;
+        
+          } catch (error) {
+            console.error("Error al clasificar:", error);
+            document.getElementById("resultadoCubierta").textContent =
+              "Error al clasificar la imagen.";
+          }
+        });
 </script>
+
 
 </div>
-<script>
-const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
-const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
-// Esta función debe devolver tu lista de direcciones OCR
-// Adáptala a tu estructura real
-function obtenerDireccionesOCR() {
-    return direccionesOCR; // tu array real
-}
-
-async function procesarDirecciones() {
-    const direcciones = obtenerDireccionesOCR();
-
-    for (const direccion of direcciones) {
-        try {
-            const imagen = await obtenerImagenAerea(direccion);
-            const tipoCubierta = await detectarCubierta(imagen);
-
-            console.log(direccion, "→", tipoCubierta);
-
-            // Aquí actualizas tu UI o tabla
-            actualizarFilaDireccion(direccion, tipoCubierta);
-
-        } catch (err) {
-            console.error("Error con", direccion, err);
-        }
-    }
-}
-
-// 1) Obtener imagen aérea desde Google Maps Static API
-async function obtenerImagenAerea(direccion) {
-    const url = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
-
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("No se pudo obtener la imagen aérea");
-
-    return await res.arrayBuffer(); // devolvemos la imagen como binario
-}
-
-// 2) Enviar imagen a Roboflow Hosted API
-async function detectarCubierta(imagenArrayBuffer) {
-    const url = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: imagenArrayBuffer
-    });
-
-    const data = await res.json();
-
-    if (!data.predictions || data.predictions.length === 0) {
-        return "Sin detección";
-    }
-
-    // Tomamos la predicción con mayor confianza
-    const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-
-    return mejor.class; // "teja" o "cubierta_plana"
-}
-
-// 3) Actualizar UI (adáptalo a tu tabla real)
-function actualizarFilaDireccion(direccion, tipo) {
-    // Ejemplo:
-    const fila = document.querySelector(`[data-direccion="${direccion}"]`);
-    if (fila) fila.querySelector(".tipo-cubierta").textContent = tipo;
-}
-</script>
-        
-<script>
-        async function reclasificarCubiertasExistentes() {
-    const todosLi = document.querySelectorAll("#lista-direcciones li");
-
-    for (const li of todosLi) {
-        const input = li.querySelector(".direccion-editable");
-        if (!input) continue;
-
-        const direccion = input.value.trim();
-
-        const idSeguro = direccion
-            .replace(/\s+/g, "_")
-            .replace(/[^a-zA-Z0-9_]/g, "");
-
-        try {
-            // 1. Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=21&size=1024x1024&maptype=satellite&key=${GOOGLE_API_KEY}`;
-            const imgResponse = await fetch(urlMapa);
-                
-            if (!imgResponse.ok || imgResponse.headers.get("content-type").includes("text/html")) {
-            console.error("Google Maps devolvió HTML, no imagen");
-            continue;
-        }
-
-
-            // 2. Clasificar con Roboflow Hosted API
-            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-            const resRF = await fetch(urlRF, {
-                method: "POST",
-                headers: { "Content-Type": "application/octet-stream" },
-                body: arrayBuffer
-            });
-
-            const data = await resRF.json();
-
-            let tipo = "No detectado";
-            if (data.predictions && data.predictions.length > 0) {
-                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-                tipo = mejor.class;
-            }
-
-            // 3. Actualizar UI
-            const destino = document.getElementById(`cubierta-${idSeguro}`);
-            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
-
-        } catch (error) {
-            console.error("Error reclasificando:", direccion, error);
-        }
-    }
-}
-</script>
-<script>
-  
-function actualizarFilaDireccion(direccion, tipo) {
-    const filas = document.querySelectorAll("table tbody tr");
-
-    for (const fila of filas) {
-        const celdaDireccion = fila.querySelector(".direccion");
-
-        if (celdaDireccion && celdaDireccion.textContent.trim() === direccion.trim()) {
-            const celdaTipo = fila.querySelector(".tipo-cubierta");
-            if (celdaTipo) {
-                celdaTipo.textContent = tipo;
-            }
-            break;
-        }
-    }
-}
-document.getElementById("recalcularBtn").addEventListener("click", async () => {
-    await reclasificarCubiertasExistentes();
-});
-
-  function mostrarDirecciones(direcciones) {
-    const lista = document.getElementById("lista-direcciones");
-    lista.innerHTML = "";
-
-    direcciones.forEach(dir => {
-        const li = document.createElement("li");
-        li.contentEditable = true;
-        li.textContent = dir;
-        lista.appendChild(li);
-    });
-}
-
-  async function recalcularCubiertas() {
-    const GOOGLE_API_KEY = "TU_API_KEY";
-    const ROBOFLOW_API_KEY = "TU_API_KEY";
-
-    const lista = document.getElementById("lista-direcciones");
-    const items = lista.querySelectorAll("li");
-
-    const direcciones = Array.from(items).map(li => li.textContent.trim());
-
-    const normalizadas = direcciones.map(d => normalizarDireccion(d));
-
-    const direccionesConCoordenadas = [];
-
-    for (let d of normalizadas) {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(d)}&key=${GOOGLE_API_KEY}`;
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (!data.results || data.results.length === 0) {
-            console.warn("No se pudieron obtener coordenadas para:", d);
-            continue;
-        }
-
-        const loc = data.results[0].geometry.location;
-
-        direccionesConCoordenadas.push({
-            direccion: d,
-            lat: loc.lat,
-            lon: loc.lng
-        });
-    }
-
-    // Ahora procesar imágenes satélite + Roboflow
-    procesarDireccionesOCR(direccionesConCoordenadas);
-}
-
-</script>
-
-    </div>
 </body>
 </html>
