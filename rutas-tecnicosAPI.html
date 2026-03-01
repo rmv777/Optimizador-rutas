@@ -442,7 +442,8 @@ async function procesarDireccionesOCR(direccionesConCoordenadas) {
     const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
     const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
-    const lista = document.getElementById("lista-direcciones");
+    const lista = document.getElementById("lista-cubiertas");
+    lista.innerHTML = ""; // limpiar resultados anteriores
 
     for (const item of direccionesConCoordenadas) {
         const { direccion, lat, lon } = item;
@@ -454,7 +455,6 @@ async function procesarDireccionesOCR(direccionesConCoordenadas) {
 
         const imgRes = await fetch(staticMapURL);
 
-        // Validación: Google puede devolver HTML si falla
         if (!imgRes.ok || !imgRes.headers.get("content-type").startsWith("image/")) {
             console.error("Google Maps devolvió un error o HTML en vez de imagen:", direccion);
             continue;
@@ -475,6 +475,7 @@ async function procesarDireccionesOCR(direccionesConCoordenadas) {
         lista.appendChild(li);
     }
 }
+
 
 
 
