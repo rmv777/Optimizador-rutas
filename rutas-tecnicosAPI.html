@@ -389,88 +389,34 @@ async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
 
-    // Mostrar indicador de carga
-    document.getElementById("ocr-loading").style.display = "block";
+    const imagen = URL.createObjectURL(archivo);
 
-    try {
-        const resultado = await Tesseract.recognize(
-            archivo,
-            'spa',
-            { logger: m => console.log(m) }
-        );
+    const resultado = await Tesseract.recognize(imagen, "spa", {
+        logger: m => console.log(m)
+    });
 
-        // Ocultar indicador
-        document.getElementById("ocr-loading").style.display = "none";
+    const texto = resultado.data.text;
 
-const texto = resultado.data.text;
+    // 1. Normalizar caracteres invisibles y saltos raros del OCR
+    const limpio = texto
+        .replace(/\r\n/g, "\n")
+        .replace(/\r/g, "\n")
+        .replace(/\u00A0/g, " ")
+        .replace(/[^\S\n]+/g, " ")
+        .trim();
 
-// 1. Normalizar caracteres invisibles y saltos raros del OCR
-const limpio = texto
-    .replace(/\r\n/g, "\n")      // saltos Windows
-    .replace(/\r/g, "\n")        // saltos Mac
-    .replace(/\u00A0/g, " ")     // espacios no separables
-    .replace(/[^\S\n]+/g, " ")   // espacios invisibles
-    .trim();
+    // 2. Dividir en líneas limpias
+    const lineas = limpio
+        .split("\n")
+        .map(l => l.trim())
+        .filter(l => l.length > 0);
 
-// 2. Dividir en líneas de forma robusta
-const lineas = limpio
-    .split(/\n|;/)               // OCR a veces separa con ; o nada
-    .map(l => l.trim())
-    .filter(l => l.length > 0);
+    console.log("Líneas OCR detectadas:", lineas);
 
-console.log("Líneas OCR detectadas:", lineas);
-
-            
-
-
-        if (lineas.length === 0) {
-            mostrarMensaje("No se detectaron direcciones en la imagen", "advertencia");
-            return;
-        }
-
-        const direccionesConCoordenadas = [];
-        
-        for (let d of lineas) {
-        
-            // Normalizar dirección OCR antes de geocodificar
-            const limpia = normalizarDireccion(d);
-        
-            const geoURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(limpia)}&key=${GOOGLE_API_KEY}`;
-            const geoRes = await fetch(geoURL);
-            const geoData = await geoRes.json();
-        
-            if (!geoData.results || geoData.results.length === 0) {
-                console.warn("No se pudieron obtener coordenadas para:", limpia);
-                continue;
-            }
-        
-            const coords = geoData.results[0].geometry.location;
-        
-            direccionesConCoordenadas.push({
-                direccion: limpia,
-                lat: coords.lat,
-                lon: coords.lng
-            });
-        }
-
-        
-        // Ahora sí, calcular distancias con coordenadas reales
-        calcularDistanciasDesdeValencina(direccionesConCoordenadas);
-
-
-         await new Promise(r => setTimeout(r, 300));
-   
-        // 2) Añadir clasificación de cubiertas (NUEVO) 
-      procesarDireccionesOCR(direccionesConCoordenadas);
-            
-    } catch (error) {
-        console.error("Error OCR:", error);
-        mostrarMensaje("Error procesando la imagen", "advertencia");
-
-        // Ocultar indicador si hay error
-        document.getElementById("ocr-loading").style.display = "none";
-    }
+    // 3. Mostrar direcciones en la lista (editable)
+    mostrarDirecciones(lineas);
 }
+
 
 
 // === FUNCIONES DE UTILIDAD ===
@@ -478,7 +424,6 @@ console.log("Líneas OCR detectadas:", lineas);
 function normalizarDireccion(str) {
     let dir = str.trim();
 
-    // Lista de provincias españolas (con y sin acentos)
     const provincias = [
         "A Coruña","Álava","Albacete","Alicante","Almería","Asturias","Ávila",
         "Badajoz","Barcelona","Burgos","Cáceres","Cádiz","Cantabria","Castellón",
@@ -490,135 +435,81 @@ function normalizarDireccion(str) {
         "Zamora","Zaragoza"
     ];
 
-    // Normalizar acentos para comparar
     const sinAcentos = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // 1. Eliminar duplicados de provincias (genérico)
     for (const prov of provincias) {
         const provSin = sinAcentos(prov);
         const regex = new RegExp(`\\b${provSin}\\b[ ,]+${provSin}\\b`, "gi");
         dir = sinAcentos(dir).replace(regex, prov);
     }
 
-    // 2. Convertir números tipo 13-9 → 13 9
-    dir = dir.replace(/(\d+)-(\d+)/g, "$1 $2");
-
-    // 3. Quitar espacios dobles
+    dir = dir.replace(/(\d+)\s+(\d+)/g, "$1"); // evitar 13 9
     dir = dir.replace(/\s+/g, " ");
 
-    // 4. Asegurar país
-    if (!/España/i.test(dir)) {
-        dir += ", España";
-    }
-
-    // 5. Quitar comas repetidas
-    dir = dir.replace(/,+/g, ",");
-
-    // 6. Quitar espacios antes de comas
-    dir = dir.replace(/\s+,/g, ",");
+    if (!/España/i.test(dir)) dir += ", España";
 
     return dir.trim();
 }
+
  
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
 
-async function procesarDireccionesOCR(listaDirecciones) {
+async function procesarDireccionesOCR(direccionesConCoordenadas) {
+    const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
+    const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
+    const ROBOFLOW_MODEL = "roof-type-classifier/1"; // Ajusta si tu modelo es otro
 
-    // Esperar a que la lista esté pintada
-    await new Promise(r => setTimeout(r, 300));
+    const lista = document.getElementById("lista-direcciones");
 
-    for (const item of listaDirecciones) {
-    const direccionOCR = item.direccion;
-    const lat = item.lat;
-    const lon = item.lon;
+    for (const item of direccionesConCoordenadas) {
+        const direccion = item.direccion;
+        const lat = item.lat;
+        const lon = item.lon;
 
+        // 1. Generar imagen satélite con Google Static Maps
+        const staticMapURL =
+            `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}` +
+            `&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
 
-        // Buscar el <li> correspondiente
-        const todosLi = document.querySelectorAll("#lista-direcciones li");
-        let liCoincidente = null;
+        // Descargar imagen como blob
+        const imgRes = await fetch(staticMapURL);
+        const imgBlob = await imgRes.blob();
 
-        const buscadaNorm = normalizarDireccion(direccionOCR);
+        // 2. Enviar imagen a Roboflow
+        const formData = new FormData();
+        formData.append("file", imgBlob, "roof.jpg");
 
-        for (const li of todosLi) {
-            const input = li.querySelector(".direccion-editable");
-            if (!input) continue;
+        const roboflowURL =
+            `https://detect.roboflow.com/${ROBOFLOW_MODEL}?api_key=${ROBOFLOW_API_KEY}`;
 
-            const listaNorm = normalizarDireccion(input.value);
+        const rfRes = await fetch(roboflowURL, {
+            method: "POST",
+            body: formData
+        });
 
-            if (listaNorm.includes(buscadaNorm) || buscadaNorm.includes(listaNorm)) {
-                liCoincidente = li;
-                break;
-            }
+        const rfData = await rfRes.json();
+
+        // 3. Interpretar resultado de Roboflow
+        let tipoCubierta = "Desconocido";
+
+        if (rfData && rfData.predictions && rfData.predictions.length > 0) {
+            const pred = rfData.predictions[0];
+            tipoCubierta = pred.class || "Desconocido";
         }
 
-        if (!liCoincidente) {
-            console.warn("No se encontró coincidencia para:", direccionOCR);
-            continue;
-        }
-
-        const idSeguro = liCoincidente
-            .querySelector(".direccion-editable")
-            .value.replace(/\s+/g, "_")
-            .replace(/[^a-zA-Z0-9_]/g, "");
-        
-        try {
-            // 1. Obtener imagen aérea desde Google Maps
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lon}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
-            const imgResponse = await fetch(urlMapa);
-            
-            // --- VALIDACIÓN CRÍTICA ---
-            if (!imgResponse.ok) {
-                console.error("Google Maps devolvió un error HTTP:", imgResponse.status);
-                continue; // seguimos con la siguiente dirección
-            }
-            
-            const blob = await imgResponse.blob();
-            
-            // 1. Validar que es una imagen real
-            if (!blob.type.startsWith("image/")) {
-                console.error("Google Maps devolvió HTML en vez de imagen.");
-                continue;
-            }
-            
-            // 2. Detectar imágenes de error de Google
-            const textCheck = await blob.text();
-            if (textCheck.includes("no imagery") || textCheck.includes("Sorry")) {
-                console.warn("Google Maps no tiene imagen satélite para esta dirección.");
-                continue;
-            }
-            
-            // 3. Convertir a arrayBuffer SOLO si es válido
-            const arrayBuffer = await blob.arrayBuffer();
-
-        
-            // 2. Clasificar con Roboflow Hosted API
-            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-            const resRF = await fetch(urlRF, {
-                method: "POST",
-                headers: { "Content-Type": "application/octet-stream" },
-                body: arrayBuffer
-            });
-        
-            const data = await resRF.json();
-
-
-            let tipo = "No detectado";
-            if (data.predictions && data.predictions.length > 0) {
-                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-                tipo = mejor.class;
-            }
-
-            // 3. Actualizar el <p> correspondiente
-            const destino = document.getElementById(`cubierta-${idSeguro}`);
-            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
-
-        } catch (error) {
-            console.error("Error procesando dirección:", direccionOCR, error);
-        }
+        // 4. Actualizar la tabla HTML
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <strong>${direccion}</strong><br>
+            <img src="${staticMapURL}" width="200"><br>
+            Cubierta: <strong>${tipoCubierta}</strong>
+        `;
+        lista.appendChild(li);
     }
 }
+
 
 
 function calcularDistanciasDesdeValencina(listaDirecciones) {
@@ -1360,6 +1251,54 @@ function actualizarFilaDireccion(direccion, tipo) {
 document.getElementById("recalcularBtn").addEventListener("click", async () => {
     await reclasificarCubiertasExistentes();
 });
+
+  function mostrarDirecciones(direcciones) {
+    const lista = document.getElementById("lista-direcciones");
+    lista.innerHTML = "";
+
+    direcciones.forEach(dir => {
+        const li = document.createElement("li");
+        li.contentEditable = true;
+        li.textContent = dir;
+        lista.appendChild(li);
+    });
+}
+
+  async function recalcularCubiertas() {
+    const GOOGLE_API_KEY = "TU_API_KEY";
+    const ROBOFLOW_API_KEY = "TU_API_KEY";
+
+    const lista = document.getElementById("lista-direcciones");
+    const items = lista.querySelectorAll("li");
+
+    const direcciones = Array.from(items).map(li => li.textContent.trim());
+
+    const normalizadas = direcciones.map(d => normalizarDireccion(d));
+
+    const direccionesConCoordenadas = [];
+
+    for (let d of normalizadas) {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(d)}&key=${GOOGLE_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.results || data.results.length === 0) {
+            console.warn("No se pudieron obtener coordenadas para:", d);
+            continue;
+        }
+
+        const loc = data.results[0].geometry.location;
+
+        direccionesConCoordenadas.push({
+            direccion: d,
+            lat: loc.lat,
+            lon: loc.lng
+        });
+    }
+
+    // Ahora procesar imágenes satélite + Roboflow
+    procesarDireccionesOCR(direccionesConCoordenadas);
+}
 
 </script>
 
