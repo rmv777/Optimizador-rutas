@@ -259,8 +259,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
        <div id="ocr-loading" style="display:none; margin-top:10px;">
     <span class="reloj-animado">⏳</span> Procesando imagen...
 </div>
-
-    </div>
+      </div>
                 
         <p id="resultadoCubierta"></p>
 
@@ -288,10 +287,12 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         </button>
        <button id="recalcularBtn" class="btn btn-primary">Recalcular cubiertas</button>
        <button onclick="detectarCubiertas()">Detectar tipo de cubierta</button>
-
     </div>
-
-    <ul id="lista-direcciones"></ul>
+      <h3>Direcciones detectadas por OCR</h3>
+      <ul id="lista-direcciones" style="margin-bottom:20px;"></ul>
+      
+      <h3>Resultados de tipo de cubierta</h3>
+      <ul id="lista-cubiertas"></ul>
         
 </div>
 <div class="tarjeta">
