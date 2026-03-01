@@ -476,11 +476,6 @@ async function procesarDireccionesOCR(listaDirecciones) {
     // Esperar a que la lista esté pintada
     await new Promise(r => setTimeout(r, 300));
 
-    const lineas = textoOCR
-        .split("\n")
-        .map(l => l.trim())
-        .filter(l => l.length > 0);
-
     for (const item of listaDirecciones) {
     const direccionOCR = item.direccion;
     const lat = item.lat;
