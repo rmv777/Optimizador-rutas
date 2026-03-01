@@ -481,7 +481,7 @@ async function procesarDireccionesOCR(textoOCR) {
                 continue;
             }
             // ---------------------------
-        
+                
             const arrayBuffer = await imgResponse.arrayBuffer();
         
             // 2. Clasificar con Roboflow Hosted API
@@ -1149,27 +1149,6 @@ async function obtenerImagenAerea(direccion) {
     return await res.arrayBuffer(); // devolvemos la imagen como binario
 }
 
-// 2) Enviar imagen a Roboflow Hosted API
-async function detectarCubierta(imagenArrayBuffer) {
-    const url = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/octet-stream" },
-        body: imagenArrayBuffer
-    });
-
-    const data = await res.json();
-
-    if (!data.predictions || data.predictions.length === 0) {
-        return "Sin detección";
-    }
-
-    // Tomamos la predicción con mayor confianza
-    const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-
-    return mejor.class; // "teja" o "cubierta_plana"
-}
 
 // 3) Actualizar UI (adáptalo a tu tabla real)
 function actualizarFilaDireccion(direccion, tipo) {
@@ -1178,7 +1157,68 @@ function actualizarFilaDireccion(direccion, tipo) {
     if (fila) fila.querySelector(".tipo-cubierta").textContent = tipo;
 }
 </script>
-        
+<script>
+        async function detectarCubiertaDesdeDireccion(direccionOCR) {
+    try {
+        // 1. Obtener imagen aérea desde Google Maps
+        const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
+        const imgResponse = await fetch(urlMapa);
+
+        // --- VALIDACIÓN 1: Google Maps devolvió error HTTP ---
+        if (!imgResponse.ok) {
+            console.error("Google Maps devolvió un error HTTP:", imgResponse.status, direccionOCR);
+            return "Sin imagen";
+        }
+
+        // Convertimos a Blob para poder inspeccionar el contenido
+        const blob = await imgResponse.blob();
+
+        // --- VALIDACIÓN 2: Google devolvió HTML (error) en vez de imagen ---
+        const contentType = blob.type || "";
+        if (!contentType.startsWith("image/")) {
+            console.error("Google Maps devolvió HTML en vez de imagen:", direccionOCR);
+            return "Sin imagen";
+        }
+
+        // --- VALIDACIÓN 3: Google devolvió la imagen de error "Sorry, we have no imagery here" ---
+        const textCheck = await blob.text();
+        if (textCheck.includes("Sorry") || textCheck.includes("no imagery")) {
+            console.warn("Google Maps no tiene imagen satélite para:", direccionOCR);
+            return "Sin imagen";
+        }
+
+        // Si llegamos aquí, la imagen es válida → convertir a ArrayBuffer
+        const arrayBuffer = await blob.arrayBuffer();
+
+        // 2. Clasificar con Roboflow Hosted API
+        const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
+        const resRF = await fetch(urlRF, {
+            method: "POST",
+            headers: { "Content-Type": "application/octet-stream" },
+            body: arrayBuffer
+        });
+
+        if (!resRF.ok) {
+            console.error("Roboflow devolvió error HTTP:", resRF.status, direccionOCR);
+            return "Sin imagen";
+        }
+
+        const data = await resRF.json();
+
+        // 3. Procesar predicciones
+        if (data.predictions && data.predictions.length > 0) {
+            const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
+            return mejor.class;
+        }
+
+        return "No detectado";
+
+    } catch (error) {
+        console.error("Error detectando cubierta:", direccionOCR, error);
+        return "Error";
+    }
+}
+</script>
 <script>
         async function reclasificarCubiertasExistentes() {
     const todosLi = document.querySelectorAll("#lista-direcciones li");
