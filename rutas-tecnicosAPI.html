@@ -286,15 +286,14 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </div>
 
 </div>
-<script>
-        const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
-        const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
+        
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
 
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
+<script>
 function sumarMinutosAHora(horaBase, minutosASumar) {
     const totalMin = horaBase * 60 + minutosASumar;
 
@@ -310,6 +309,10 @@ function sumarMinutosAHora(horaBase, minutosASumar) {
         return `${h}:${m.toString().padStart(2, '0')}`;
     }
 }
+
+</script>
+        
+<script>
 
 function formatearHoras(minutosTotales) {
     const horas = Math.floor(minutosTotales / 60);
@@ -360,6 +363,7 @@ async function procesarImagenOCR(event) {
     const archivo = event.target.files[0];
     if (!archivo) return;
 
+    // Mostrar indicador de carga
     document.getElementById("ocr-loading").style.display = "block";
 
     try {
@@ -369,6 +373,7 @@ async function procesarImagenOCR(event) {
             { logger: m => console.log(m) }
         );
 
+        // Ocultar indicador
         document.getElementById("ocr-loading").style.display = "none";
 
         const texto = resultado.data.text;
@@ -383,23 +388,23 @@ async function procesarImagenOCR(event) {
             return;
         }
 
-        // 1) Añadir direcciones a la lista y calcular distancias
         calcularDistanciasDesdeValencina(
             lineas.map(d => ({ direccion: d }))
         );
 
-        // 2) Clasificar cubiertas SOLO para esas direcciones
-        for (const direccion of lineas) {
-            await detectarCubiertaDesdeDireccion(direccion);
-        }
-
+         await new Promise(r => setTimeout(r, 300));
+   
+        // 2) Añadir clasificación de cubiertas (NUEVO) 
+        procesarDireccionesOCR(texto);
+            
     } catch (error) {
         console.error("Error OCR:", error);
         mostrarMensaje("Error procesando la imagen", "advertencia");
+
+        // Ocultar indicador si hay error
         document.getElementById("ocr-loading").style.display = "none";
     }
 }
-
 
 
 // === FUNCIONES DE UTILIDAD ===
@@ -476,7 +481,7 @@ async function procesarDireccionesOCR(textoOCR) {
                 continue;
             }
             // ---------------------------
-                
+        
             const arrayBuffer = await imgResponse.arrayBuffer();
         
             // 2. Clasificar con Roboflow Hosted API
@@ -1030,17 +1035,22 @@ document.getElementById("btn-clima").addEventListener("click", async () => {
 
 });
 
+
+
+</script>
         <!-- ARRASTRAR Y SOLTAR -->
-        <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>    
 
-
+<script>
 new Sortable(document.getElementById("lista-direcciones"), {
     animation: 150,
     onEnd: function () {
         console.log("Nuevo orden manual aplicado");
     }
 });
-
+</script>
+        
+<script>
 document.addEventListener("click", function(e) {
     if (!e.target.classList.contains("radio-comida")) return;
 
@@ -1097,8 +1107,12 @@ document.addEventListener("click", function(e) {
     window.open(urlWhatsapp, "_blank");
 });
 
-</div>
+</script>
 
+</div>
+<script>
+const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
+const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
 // Esta función debe devolver tu lista de direcciones OCR
 // Adáptala a tu estructura real
@@ -1135,6 +1149,27 @@ async function obtenerImagenAerea(direccion) {
     return await res.arrayBuffer(); // devolvemos la imagen como binario
 }
 
+// 2) Enviar imagen a Roboflow Hosted API
+async function detectarCubierta(imagenArrayBuffer) {
+    const url = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
+
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: imagenArrayBuffer
+    });
+
+    const data = await res.json();
+
+    if (!data.predictions || data.predictions.length === 0) {
+        return "Sin detección";
+    }
+
+    // Tomamos la predicción con mayor confianza
+    const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
+
+    return mejor.class; // "teja" o "cubierta_plana"
+}
 
 // 3) Actualizar UI (adáptalo a tu tabla real)
 function actualizarFilaDireccion(direccion, tipo) {
@@ -1142,69 +1177,10 @@ function actualizarFilaDireccion(direccion, tipo) {
     const fila = document.querySelector(`[data-direccion="${direccion}"]`);
     if (fila) fila.querySelector(".tipo-cubierta").textContent = tipo;
 }
-
-async function detectarCubiertaDesdeDireccion(direccionOCR) {
-    try {
-        // 1. Obtener imagen aérea desde Google Maps
-        const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
-        const imgResponse = await fetch(urlMapa);
-
-        // --- VALIDACIÓN 1: Google Maps devolvió error HTTP ---
-        if (!imgResponse.ok) {
-            console.error("Google Maps devolvió un error HTTP:", imgResponse.status, direccionOCR);
-            return "Sin imagen";
-        }
-
-        // Convertimos a Blob para poder inspeccionar el contenido
-        const blob = await imgResponse.blob();
-
-        // --- VALIDACIÓN 2: Google devolvió HTML (error) en vez de imagen ---
-        const contentType = blob.type || "";
-        if (!contentType.startsWith("image/")) {
-            console.error("Google Maps devolvió HTML en vez de imagen:", direccionOCR);
-            return "Sin imagen";
-        }
-
-        // --- VALIDACIÓN 3: Google devolvió la imagen de error "Sorry, we have no imagery here" ---
-        const textCheck = await blob.text();
-        if (textCheck.includes("Sorry") || textCheck.includes("no imagery")) {
-            console.warn("Google Maps no tiene imagen satélite para:", direccionOCR);
-            return "Sin imagen";
-        }
-
-        // Si llegamos aquí, la imagen es válida → convertir a ArrayBuffer
-        const arrayBuffer = await blob.arrayBuffer();
-
-        // 2. Clasificar con Roboflow Hosted API
-        const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-        const resRF = await fetch(urlRF, {
-            method: "POST",
-            headers: { "Content-Type": "application/octet-stream" },
-            body: arrayBuffer
-        });
-
-        if (!resRF.ok) {
-            console.error("Roboflow devolvió error HTTP:", resRF.status, direccionOCR);
-            return "Sin imagen";
-        }
-
-        const data = await resRF.json();
-
-        // 3. Procesar predicciones
-        if (data.predictions && data.predictions.length > 0) {
-            const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-            return mejor.class;
-        }
-
-        return "No detectado";
-
-    } catch (error) {
-        console.error("Error detectando cubierta:", direccionOCR, error);
-        return "Error";
-    }
-}
-
-  async function reclasificarCubiertasExistentes() {
+</script>
+        
+<script>
+        async function reclasificarCubiertasExistentes() {
     const todosLi = document.querySelectorAll("#lista-direcciones li");
 
     for (const li of todosLi) {
@@ -1217,12 +1193,44 @@ async function detectarCubiertaDesdeDireccion(direccionOCR) {
             .replace(/\s+/g, "_")
             .replace(/[^a-zA-Z0-9_]/g, "");
 
-        const tipo = await detectarCubiertaDesdeDireccion(direccion);
+        try {
+            // 1. Obtener imagen aérea
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=21&size=1024x1024&maptype=satellite&key=${GOOGLE_API_KEY}`;
+            const imgResponse = await fetch(urlMapa);
+                
+            if (!imgResponse.ok || imgResponse.headers.get("content-type").includes("text/html")) {
+            console.error("Google Maps devolvió HTML, no imagen");
+            continue;
+        }
 
-        const destino = document.getElementById(`cubierta-${idSeguro}`);
-        if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
+
+            // 2. Clasificar con Roboflow Hosted API
+            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
+            const resRF = await fetch(urlRF, {
+                method: "POST",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: arrayBuffer
+            });
+
+            const data = await resRF.json();
+
+            let tipo = "No detectado";
+            if (data.predictions && data.predictions.length > 0) {
+                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
+                tipo = mejor.class;
+            }
+
+            // 3. Actualizar UI
+            const destino = document.getElementById(`cubierta-${idSeguro}`);
+            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
+
+        } catch (error) {
+            console.error("Error reclasificando:", direccion, error);
+        }
     }
 }
+</script>
+<script>
   
 function actualizarFilaDireccion(direccion, tipo) {
     const filas = document.querySelectorAll("table tbody tr");
@@ -1239,8 +1247,7 @@ function actualizarFilaDireccion(direccion, tipo) {
         }
     }
 }
-
-    document.getElementById("btn-recalcular").addEventListener("click", async () => {
+document.getElementById("btn-recalcular").addEventListener("click", async () => {
     await reclasificarCubiertasExistentes();
 });
 </script>
