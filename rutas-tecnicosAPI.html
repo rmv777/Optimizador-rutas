@@ -271,6 +271,8 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
         <button id="btn-recalcular" class="boton-accion boton-recalcular">🔄 Recalcular ruta</button>
         <button id="btn-exportar" class="boton-accion boton-exportar">📤 Exportar a Google Maps</button>
         <button id="btnWhatsappRuta" class="boton-accion" style="background:#25D366;">
+        <button id="recalcularBtn" class="btn btn-primary">Recalcular cubiertas</button>
+
             💬 Enviar ruta por WhatsApp
         </button>
         <button onclick="procesarDirecciones()">Detectar tipo de cubierta</button>
@@ -1247,9 +1249,10 @@ function actualizarFilaDireccion(direccion, tipo) {
         }
     }
 }
-document.getElementById("btn-recalcular").addEventListener("click", async () => {
+document.getElementById("recalcularBtn").addEventListener("click", async () => {
     await reclasificarCubiertasExistentes();
 });
+
 </script>
 
 
