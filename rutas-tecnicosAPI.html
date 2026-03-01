@@ -430,7 +430,7 @@ async function procesarImagenOCR(event) {
          await new Promise(r => setTimeout(r, 300));
    
         // 2) Añadir clasificación de cubiertas (NUEVO) 
-        procesarDireccionesOCR(texto);
+      procesarDireccionesOCR(direccionesConCoordenadas);
             
     } catch (error) {
         console.error("Error OCR:", error);
@@ -459,7 +459,7 @@ function normalizarDireccion(str) {
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
 
-async function procesarDireccionesOCR(textoOCR) {
+async function procesarDireccionesOCR(listaDirecciones) {
 
     // Esperar a que la lista esté pintada
     await new Promise(r => setTimeout(r, 300));
@@ -469,7 +469,11 @@ async function procesarDireccionesOCR(textoOCR) {
         .map(l => l.trim())
         .filter(l => l.length > 0);
 
-    for (const direccionOCR of lineas) {
+    for (const item of listaDirecciones) {
+    const direccionOCR = item.direccion;
+    const lat = item.lat;
+    const lon = item.lon;
+
 
         // Buscar el <li> correspondiente
         const todosLi = document.querySelectorAll("#lista-direcciones li");
