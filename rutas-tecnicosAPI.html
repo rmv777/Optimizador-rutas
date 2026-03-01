@@ -866,7 +866,7 @@ let html = `
     // -----------------------------
 
     const coordenadasRuta = [];
-    const bounds = new google.maps.LatLngBounds();
+    bounds = new google.maps.LatLngBounds();
 
     // Geocodificar direcciones
     await Promise.all(
@@ -908,11 +908,12 @@ let html = `
     });
 
     map.fitBounds(bounds);
-}
 
-  //**********************
+    // Attach event listeners
+    await attachEventListeners(geocoder, service, datos);
 
-  async function pintarListaYMapa(datos) {
+
+async function attachEventListeners(geocoder, service, datos) {
 
     const lista = document.getElementById("lista-direcciones");
     lista.innerHTML = "";
@@ -1112,10 +1113,9 @@ let html = `
         window.open(urlWhatsapp, "_blank");
     });
 
-} // ← ← ← AQUÍ TERMINA LA FUNCIÓN CORRECTAMENTE
+}
 
-
-  // Esta función debe devolver tu lista de direcciones OCR
+// Esta función debe devolver tu lista de direcciones OCR
 // Adáptala a tu estructura real
 function obtenerDireccionesOCR() {
     return direccionesOCR; // tu array real
@@ -1175,8 +1175,7 @@ function actualizarFilaDireccion(direccion, tipo) {
 }
 document.getElementById("recalcularBtn").addEventListener("click", async () => {
     await reclasificarCubiertasExistentes();
-}); 
-  
+});
 
 </script>
 
