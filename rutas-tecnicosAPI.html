@@ -289,7 +289,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 
 </div>
 
-<script src="https://cdn.roboflow.com/inference/inference-latest.js"
+<script src="https://unpkg.com/@roboflow/inference@latest/dist/inference.min.js">
         onload="cargarModeloCubiertas()"></script>
 
 <script>
@@ -305,7 +305,7 @@ async function cargarModeloCubiertas() {
     modeloCubiertas = await inference.loadModel({
         model: "cubiertas-39jag",
         version: 2,
-        apiKey: "TU_API_KEY_PUBLICA"
+        apiKey: "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503"
     });
 
     modeloListo = true;
