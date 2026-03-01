@@ -279,6 +279,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
     </div>
 
     <ul id="lista-direcciones"></ul>
+        
 </div>
 <div class="tarjeta">
     <h2>🗺️ Mapa de la ruta</h2>
@@ -411,53 +412,64 @@ async function procesarImagenOCR(event) {
 async function procesarDireccionesOCR(textoOCR) {
     const lineas = textoOCR.split("\n").map(l => l.trim()).filter(l => l.length > 0);
 
-    const contenedor = document.getElementById("listaDirecciones");
-    contenedor.innerHTML = ""; // limpiar lista anterior
+    for (const direccionOCR of lineas) {
 
-    for (const direccion of lineas) {
-        const item = document.createElement("div");
-        item.className = "direccion-item";
-        item.innerHTML = `
-            <p><strong>${direccion}</strong></p>
-            <p id="estado-${direccion}">Obteniendo imagen aérea...</p>
-        `;
-        contenedor.appendChild(item);
+        // Buscar el <li> que contiene esta dirección
+        const todosLi = document.querySelectorAll("#lista-direcciones li");
+        let liCoincidente = null;
+
+        for (const li of todosLi) {
+            const input = li.querySelector(".direccion-editable");
+            if (!input) continue;
+
+            const direccionLista = input.value.trim().toLowerCase();
+            const direccionBuscada = direccionOCR.trim().toLowerCase();
+
+            if (direccionLista.includes(direccionBuscada)) {
+                liCoincidente = li;
+                break;
+            }
+        }
+
+        if (!liCoincidente) {
+            console.warn("No se encontró coincidencia para:", direccionOCR);
+            continue;
+        }
+
+        const idSeguro = liCoincidente
+            .querySelector(".direccion-editable")
+            .value.replace(/\s+/g, "_")
+            .replace(/[^a-zA-Z0-9_]/g, "");
 
         try {
-            // === 1) Obtener imagen aérea de Google Maps ===
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=20&size=600x600&maptype=satellite&key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ`;
-
+            // Obtener imagen aérea
+            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=TU_API_KEY`;
             const imgResponse = await fetch(urlMapa);
             const blob = await imgResponse.blob();
 
-            document.getElementById(`estado-${direccion}`).textContent = "Clasificando cubierta...";
-
-            // === 2) Enviar imagen a Roboflow ===
+            // Clasificar con Roboflow
             const formData = new FormData();
             formData.append("file", blob, "map.jpg");
 
             const res = await fetch(
-                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=Tx25IobHbnq9QuaHZ76H",
-                {
-                    method: "POST",
-                    body: formData
-                }
+                "https://serverless.roboflow.com/cubiertas-39jag/2?api_key=TU_API_KEY",
+                { method: "POST", body: formData }
             );
 
             const data = await res.json();
             const tipo = data?.predictions?.[0]?.class || "No detectado";
 
-            // === 3) Mostrar resultado ===
-            document.getElementById(`estado-${direccion}`).innerHTML =
-                `Cubierta detectada: <strong>${tipo}</strong>`;
+            // Actualizar el <p> correcto
+            const destino = document.getElementById(`cubierta-${idSeguro}`);
+            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
 
         } catch (error) {
-            console.error("Error procesando dirección:", direccion, error);
-            document.getElementById(`estado-${direccion}`).textContent =
-                "Error al obtener o clasificar la imagen.";
+            console.error("Error procesando dirección:", direccionOCR, error);
         }
     }
 }
+
+
 
 
 
@@ -638,37 +650,44 @@ if (i < paradas.length - 1) {
     // Símbolo de prohibido si distancia > 40 km
     const simboloProhibido = infoTramo.distanciaValor > 40000 ? "&#128683;" : "";
 
-    let html = `
-        <strong>${i}.</strong> 
-        <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
-            ${simboloProhibido}
-        </span>
+let html = `
+    <strong>${i}.</strong> 
+    <span class="alerta-km" style="font-size:20px; color:red; margin-right:6px;">
+        ${simboloProhibido}
+    </span>
 
-        <input type="text" class="direccion-editable" 
-               value="${item.direccion}" 
-               style="width: 70%; margin-bottom: 5px;">
+    <input type="text" class="direccion-editable" 
+           value="${item.direccion}" 
+           style="width: 70%; margin-bottom: 5px;">
 
-        <button class="btn-eliminar" 
-                style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
-            X
-        </button>
+    <button class="btn-eliminar" 
+            style="margin-left: 10px; color: white; background: red; border: none; padding: 4px 8px; cursor: pointer;">
+        X
+    </button>
 
-        <input type="number" class="tiempo-extra" 
-               value="${item.minutos ?? 60}" 
-               min="0" 
-               style="width:44px; margin-left:10px;"> min
+    <input type="number" class="tiempo-extra" 
+           value="${item.minutos ?? 60}" 
+           min="0" 
+           style="width:44px; margin-left:10px;"> min
 
-        <div class="comida-wrapper" style="margin-left:10px;">
-            <input type="radio"
-                   name="comida"
-                   class="radio-comida"
-                   data-waschecked="${item.comida ? "true" : "false"}"
-                   ${item.comida ? "checked" : ""}>
-            <span>Lunch</span>
-        </div>
+    <div class="comida-wrapper" style="margin-left:10px;">
+        <input type="radio"
+               name="comida"
+               class="radio-comida"
+               data-waschecked="${item.comida ? "true" : "false"}"
+               ${item.comida ? "checked" : ""}>
+        <span>Lunch</span>
+    </div>
 
-        <br>
-    `;
+    <br>
+
+    <p class="tipo-cubierta" 
+       id="cubierta-${item.direccion.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_]/g, "")}"
+       style="margin:4px 0; font-size:14px; color:#333;">
+       Detectando cubierta...
+    </p>
+`;
+
 
     if (i === 1) {
         html += `<span class="dist"><strong>Desde Valencina → primera:</strong> ${infoTramo.distanciaTexto} ${infoTramo.duracionTexto}</span>`;
