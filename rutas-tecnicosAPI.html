@@ -286,14 +286,15 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
 </div>
 
 </div>
-        
+<script>
+        const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
+        const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 <!-- GOOGLE MAPS -->
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ&libraries=places"></script>
 
 <!-- TESSERACT -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
-<script>
 function sumarMinutosAHora(horaBase, minutosASumar) {
     const totalMin = horaBase * 60 + minutosASumar;
 
@@ -1100,8 +1101,6 @@ document.addEventListener("click", function(e) {
 
 </div>
 
-const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
-const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
 // Esta función debe devolver tu lista de direcciones OCR
 // Adáptala a tu estructura real
