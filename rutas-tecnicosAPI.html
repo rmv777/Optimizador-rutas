@@ -1097,7 +1097,7 @@ document.addEventListener("click", function(e) {
 </div>
 <script>
 const GOOGLE_API_KEY = "AIzaSyAa7ThD8Quf93jq-obv3pDzini3wVx1QVQ";
-const ROBOFLOW_API_KEY = "rf_kGaMtp7Rz9NpNBexUlXh8BFpI503";
+const ROBOFLOW_API_KEY = "Tx25IobHbnq9QuaHZ76H";
 
 // Esta función debe devolver tu lista de direcciones OCR
 // Adáptala a tu estructura real
@@ -1182,7 +1182,12 @@ function actualizarFilaDireccion(direccion, tipo) {
             // 1. Obtener imagen aérea
             const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=21&size=1024x1024&maptype=satellite&key=${GOOGLE_API_KEY}`;
             const imgResponse = await fetch(urlMapa);
-            const arrayBuffer = await imgResponse.arrayBuffer();
+                
+            if (!imgResponse.ok || imgResponse.headers.get("content-type").includes("text/html")) {
+            console.error("Google Maps devolvió HTML, no imagen");
+            continue;
+        }
+
 
             // 2. Clasificar con Roboflow Hosted API
             const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
