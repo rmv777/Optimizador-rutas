@@ -414,26 +414,31 @@ async function procesarImagenOCR(event) {
             return;
         }
 
-       const direccionesConCoordenadas = [];
-
-        for (const d of lineas) {
-            const geoURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(d)}&key=${GOOGLE_API_KEY}`;
+        const direccionesConCoordenadas = [];
+        
+        for (let d of lineas) {
+        
+            // Normalizar dirección OCR antes de geocodificar
+            const limpia = normalizarDireccion(d);
+        
+            const geoURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(limpia)}&key=${GOOGLE_API_KEY}`;
             const geoRes = await fetch(geoURL);
             const geoData = await geoRes.json();
         
             if (!geoData.results || geoData.results.length === 0) {
-                console.warn("No se pudieron obtener coordenadas para:", d);
+                console.warn("No se pudieron obtener coordenadas para:", limpia);
                 continue;
             }
         
-            const resultadoGeocoding = geoData.results[0].geometry.location;
+            const coords = geoData.results[0].geometry.location;
         
             direccionesConCoordenadas.push({
-                direccion: d,
-                lat: resultadoGeocoding.lat,
-                lon: resultadoGeocoding.lng
+                direccion: limpia,
+                lat: coords.lat,
+                lon: coords.lng
             });
         }
+
         
         // Ahora sí, calcular distancias con coordenadas reales
         calcularDistanciasDesdeValencina(direccionesConCoordenadas);
@@ -457,16 +462,50 @@ async function procesarImagenOCR(event) {
 // === FUNCIONES DE UTILIDAD ===
 
 function normalizarDireccion(str) {
-    return str
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/\b(calle|cl|c\/|avda|avenida|camino|cmno|crta|carretera)\b/g, "")
-        .replace(/cadiz/g, "") 
-        .replace(/[,\.]/g, "")
-        .replace(/-/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-}      
+    let dir = str.trim();
+
+    // Lista de provincias españolas (con y sin acentos)
+    const provincias = [
+        "A Coruña","Álava","Albacete","Alicante","Almería","Asturias","Ávila",
+        "Badajoz","Barcelona","Burgos","Cáceres","Cádiz","Cantabria","Castellón",
+        "Ciudad Real","Córdoba","Cuenca","Girona","Granada","Guadalajara","Guipúzcoa",
+        "Huelva","Huesca","Islas Baleares","Jaén","La Rioja","Las Palmas","León",
+        "Lleida","Lugo","Madrid","Málaga","Murcia","Navarra","Ourense","Palencia",
+        "Pontevedra","Salamanca","Santa Cruz de Tenerife","Segovia","Sevilla",
+        "Soria","Tarragona","Teruel","Toledo","Valencia","Valladolid","Vizcaya",
+        "Zamora","Zaragoza"
+    ];
+
+    // Normalizar acentos para comparar
+    const sinAcentos = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // 1. Eliminar duplicados de provincias (genérico)
+    for (const prov of provincias) {
+        const provSin = sinAcentos(prov);
+        const regex = new RegExp(`\\b${provSin}\\b[ ,]+${provSin}\\b`, "gi");
+        dir = sinAcentos(dir).replace(regex, prov);
+    }
+
+    // 2. Convertir números tipo 13-9 → 13 9
+    dir = dir.replace(/(\d+)-(\d+)/g, "$1 $2");
+
+    // 3. Quitar espacios dobles
+    dir = dir.replace(/\s+/g, " ");
+
+    // 4. Asegurar país
+    if (!/España/i.test(dir)) {
+        dir += ", España";
+    }
+
+    // 5. Quitar comas repetidas
+    dir = dir.replace(/,+/g, ",");
+
+    // 6. Quitar espacios antes de comas
+    dir = dir.replace(/\s+,/g, ",");
+
+    return dir.trim();
+}
+ 
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
