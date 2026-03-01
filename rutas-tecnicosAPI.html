@@ -486,21 +486,31 @@ async function procesarDireccionesOCR(textoOCR) {
             // 1. Obtener imagen aérea desde Google Maps
             const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccionOCR)}&zoom=20&size=600x600&maptype=satellite&key=${GOOGLE_API_KEY}`;
             const imgResponse = await fetch(urlMapa);
-        
+            
             // --- VALIDACIÓN CRÍTICA ---
             if (!imgResponse.ok) {
                 console.error("Google Maps devolvió un error HTTP:", imgResponse.status);
+                continue; // seguimos con la siguiente dirección
+            }
+            
+            const blob = await imgResponse.blob();
+            
+            // 1. Validar que es una imagen real
+            if (!blob.type.startsWith("image/")) {
+                console.error("Google Maps devolvió HTML en vez de imagen.");
                 continue;
             }
-        
-            const contentType = imgResponse.headers.get("content-type") || "";
-            if (!contentType.startsWith("image/")) {
-                console.error("Google Maps devolvió HTML en vez de imagen. No se puede clasificar.");
+            
+            // 2. Detectar imágenes de error de Google
+            const textCheck = await blob.text();
+            if (textCheck.includes("no imagery") || textCheck.includes("Sorry")) {
+                console.warn("Google Maps no tiene imagen satélite para esta dirección.");
                 continue;
             }
-            // ---------------------------
-        
-            const arrayBuffer = await imgResponse.arrayBuffer();
+            
+            // 3. Convertir a arrayBuffer SOLO si es válido
+            const arrayBuffer = await blob.arrayBuffer();
+
         
             // 2. Clasificar con Roboflow Hosted API
             const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
