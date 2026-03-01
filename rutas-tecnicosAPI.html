@@ -402,13 +402,30 @@ async function procesarImagenOCR(event) {
             return;
         }
 
-        calcularDistanciasDesdeValencina(
-           lineas.map(d => ({
-              direccion: d,
-              lat: resultadoGeocoding[d].lat,
-              lon: resultadoGeocoding[d].lon
-          }))
-        );
+       const direccionesConCoordenadas = [];
+
+        for (const d of lineas) {
+            const geoURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(d)}&key=${GOOGLE_API_KEY}`;
+            const geoRes = await fetch(geoURL);
+            const geoData = await geoRes.json();
+        
+            if (!geoData.results || geoData.results.length === 0) {
+                console.warn("No se pudieron obtener coordenadas para:", d);
+                continue;
+            }
+        
+            const resultadoGeocoding = geoData.results[0].geometry.location;
+        
+            direccionesConCoordenadas.push({
+                direccion: d,
+                lat: resultadoGeocoding.lat,
+                lon: resultadoGeocoding.lng
+            });
+        }
+        
+        // Ahora sí, calcular distancias con coordenadas reales
+        calcularDistanciasDesdeValencina(direccionesConCoordenadas);
+
 
          await new Promise(r => setTimeout(r, 300));
    
