@@ -286,7 +286,7 @@ input[type="text"], input[type="number"], input[type="date"], input[type="file"]
             💬 Enviar ruta por WhatsApp
         </button>
        <button id="recalcularBtn" class="btn btn-primary">Recalcular cubiertas</button>
-       <button onclick="detectarCubierta()">Detectar tipo de cubierta</button>
+       <button onclick="detectarCubiertas()">Tipo de cubierta</button>
     </div>
       <h3>Direcciones detectadas por OCR</h3>
       <ul id="lista-direcciones" style="margin-bottom:20px;"></ul>
@@ -435,6 +435,33 @@ function normalizarDireccion(str) {
         .replace(/\s+/g, " ")
         .trim();
 }      
+
+  async function detectarCubiertas() {
+    const lista = document.getElementById("lista-direcciones");
+    const items = lista.querySelectorAll("li");
+
+    const direcciones = Array.from(items).map(li => li.textContent.trim());
+    const normalizadas = direcciones.map(d => normalizarDireccion(d));
+
+    const direccionesConCoordenadas = [];
+
+    for (let d of normalizadas) {
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(d)}&key=${GOOGLE_API_KEY}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.results?.length > 0) {
+            const loc = data.results[0].geometry.location;
+            direccionesConCoordenadas.push({
+                direccion: d,
+                lat: loc.lat,
+                lon: loc.lng
+            });
+        }
+    }
+
+    procesarDireccionesOCR(direccionesConCoordenadas);
+}
 
 // === PROCESAR DIRECCIONES OCR + DETECCIÓN DE CUBIERTA ===
 // Esta función recibe el texto OCR, extrae direcciones y clasifica cada una usando Google Maps + Roboflow
@@ -1148,57 +1175,6 @@ function actualizarFilaDireccion(direccion, tipo) {
 }
 </script>
         
-<script>
-        async function reclasificarCubiertasExistentes() {
-    const todosLi = document.querySelectorAll("#lista-direcciones li");
-
-    for (const li of todosLi) {
-        const input = li.querySelector(".direccion-editable");
-        if (!input) continue;
-
-        const direccion = input.value.trim();
-
-        const idSeguro = direccion
-            .replace(/\s+/g, "_")
-            .replace(/[^a-zA-Z0-9_]/g, "");
-
-        try {
-            // 1. Obtener imagen aérea
-            const urlMapa = `https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(direccion)}&zoom=21&size=1024x1024&maptype=satellite&key=${GOOGLE_API_KEY}`;
-            const imgResponse = await fetch(urlMapa);
-                
-            if (!imgResponse.ok || imgResponse.headers.get("content-type").includes("text/html")) {
-            console.error("Google Maps devolvió HTML, no imagen");
-            continue;
-        }
-
-
-            // 2. Clasificar con Roboflow Hosted API
-            const urlRF = `https://detect.roboflow.com/cubiertas-39jag/2?api_key=${ROBOFLOW_API_KEY}`;
-            const resRF = await fetch(urlRF, {
-                method: "POST",
-                headers: { "Content-Type": "application/octet-stream" },
-                body: arrayBuffer
-            });
-
-            const data = await resRF.json();
-
-            let tipo = "No detectado";
-            if (data.predictions && data.predictions.length > 0) {
-                const mejor = data.predictions.sort((a, b) => b.confidence - a.confidence)[0];
-                tipo = mejor.class;
-            }
-
-            // 3. Actualizar UI
-            const destino = document.getElementById(`cubierta-${idSeguro}`);
-            if (destino) destino.textContent = `Cubierta detectada: ${tipo}`;
-
-        } catch (error) {
-            console.error("Error reclasificando:", direccion, error);
-        }
-    }
-}
-</script>
 <script>
   
 function actualizarFilaDireccion(direccion, tipo) {
