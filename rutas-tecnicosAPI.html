@@ -402,23 +402,24 @@ async function procesarImagenOCR(event) {
         // Ocultar indicador
         document.getElementById("ocr-loading").style.display = "none";
 
-          const texto = resultado.data.text;
-      
-      // Normalizar caracteres invisibles y saltos raros del OCR
-      const limpio = texto
-          .replace(/\r\n/g, "\n")   // saltos Windows
-          .replace(/\r/g, "\n")     // saltos Mac
-          .replace(/\u00A0/g, " ")  // espacios no separables
-          .replace(/[^\S\n]+/g, " ") // colapsar espacios invisibles
-          .trim();
-      
-      // Dividir en líneas ya limpias
-      const lineas = limpio
-          .split("\n")
-          .map(l => l.trim())
-          .filter(l => l.length > 0);
-      
-      console.log("Líneas OCR detectadas:", lineas);
+const texto = resultado.data.text;
+
+// 1. Normalizar caracteres invisibles y saltos raros del OCR
+const limpio = texto
+    .replace(/\r\n/g, "\n")      // saltos Windows
+    .replace(/\r/g, "\n")        // saltos Mac
+    .replace(/\u00A0/g, " ")     // espacios no separables
+    .replace(/[^\S\n]+/g, " ")   // espacios invisibles
+    .trim();
+
+// 2. Dividir en líneas de forma robusta
+const lineas = limpio
+    .split(/\n|;/)               // OCR a veces separa con ; o nada
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+console.log("Líneas OCR detectadas:", lineas);
+
             
 
 
